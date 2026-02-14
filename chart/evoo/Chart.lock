@@ -1,0 +1,9 @@
+dependencies:
+- name: service
+  repository: ""
+  version: 0.1.4
+- name: temporal-worker
+  repository: ""
+  version: 0.1.4
+digest: sha256:f253f7a7aabadc8605bc56524d3021d7cb90241708bf7e581881d48b6c0c8bbb
+generated: "2026-02-02T20:03:41.420298631Z"

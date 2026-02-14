@@ -1,0 +1,61 @@
+build:
+  context:
+    root: ../../../
+    include_paths:
+      - agents/evoo
+    dockerfile: agents/evoo/Dockerfile
+
+local_development:
+  agent:
+    port: 8006
+  paths:
+    acp: project/acp.py
+    worker: project/run_worker.py
+
+agent:
+  acp_type: async
+  name: evoo
+  display_name: "EVOO — Evolutionary Operations Optimizer"
+  description: >
+    An autonomous AI SRE agent that continuously improves its incident remediation
+    strategy through reward-based learning. Detects production incidents, selects
+    remediation strategies, executes tool sequences, measures outcomes with a reward
+    function (+ LLM judge), stores experiences in memory, and improves over time.
+  version: "1.0.0"
+  icon: "🔬"
+  tags:
+    - sre
+    - autonomous
+    - learning
+    - incident-response
+    - ml-ops
+
+  temporal:
+    enabled: true
+    workflows:
+      - name: EVOOWorkflow
+        queue_name: evoo-queue
+
+  env:
+    AGENT_NAME: evoo
+    WORKFLOW_TASK_QUEUE: evoo-queue
+    WORKFLOW_NAME: EVOOWorkflow
+    MAX_LEARNING_RUNS: "50"
+    EXPLORATION_RATE: "0.2"
+    MEMORY_FILE_PATH: /tmp/evoo_data/evoo_memory.json
+    STRATEGY_FILE_PATH: /tmp/evoo_data/evoo_strategies.json
+    INCIDENT_INTERVAL_SECONDS: "5"
+
+deployment:
+  image:
+    repository: "sre/agents"
+    tag: "latest"
+  global:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"

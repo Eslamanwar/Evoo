@@ -1,0 +1,10 @@
+apiVersion: v2
+name: temporal-worker
+description: Temporal worker subchart for AgentEx agents
+type: application
+version: 0.1.4
+appVersion: "1.16.0"
+
+maintainers:
+- name: SRE
+  email: sre@talabat.com

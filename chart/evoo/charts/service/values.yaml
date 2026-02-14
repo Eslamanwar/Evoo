@@ -1,0 +1,413 @@
+# Default values for Rilo web service.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Environment
+env: dev
+tribe: sre
+squad: ""
+partOf: ""  # Higher level app name, in case the service is a part of a bigger app (usually a Terraform module name)
+nameOverride: "{{ .Release.Name }}"
+fullnameOverride: ""
+
+image:
+  # -- ECR Repository. This value must be changed to match service ECR repo
+  repository: 457710302499.dkr.ecr.eu-west-2/demo
+  # -- ECR image tag
+  tag: v0.1
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+# imagePullSecrets:
+#   - name: github-packges
+
+# -- ENTRYPOINT override
+command: []
+# -- CMD override
+args: []
+
+terminationGracePeriodSeconds: 60
+
+# We use Traefik as our ingress controller. Traefik intercepts and routes every
+# incoming request based on the path, the host, headers, and so on ...
+# For more information, visit https://docs.traefik.io/routing/router
+ingress:
+  enabled: true
+  sticky: false
+  # -- List of Ingress rules and service ports
+  rules:
+    - Host(`service.dhhmena.com`)
+  middlewares: []
+  # https://docs.traefik.io/middlewares/overview/
+  # middlewares:
+  #   - name: traefik-forward-auth
+
+# -- Docker container port
+containerPort: 80
+
+service:
+  # -- Service type, can be either `ClusterIP`, `NodePort`, `LoadBalancer` or `ExternalName`
+  type: ClusterIP
+  # -- Kubernetes service port when single port service
+  port: 80
+
+# We should always specify how much of each resource a container needs.
+# https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+resources:
+  limits:
+    # -- Resource memory limit
+    memory: 1Gi
+  requests:
+    # -- Resource request cpu
+    cpu: 250m
+    # -- Resource request memory
+    memory: 512Mi
+
+# The kubelet uses startup probe to indicates whether the application within the container is started
+# https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#when-should-you-use-a-startup-probe
+startupProbe:
+  tcpSocket:
+    # -- Startupprobe healthcheck port. This should be equal to docker container port in most cases
+    port: 80
+    # -- Initial delay seconds to start checking the healthcheck of the pod
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 30
+
+# The kubelet uses readiness probes to know when a container is ready to start accepting traffic.
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+readinessProbe:
+  httpGet:
+    # -- Readinessprobe healthcheck path
+    path: /
+    # -- Readinessprobe port. This should be equal to docker container port in most cases
+    port: 80
+    scheme: HTTP
+  timeoutSeconds: 2
+  periodSeconds: 10
+  successThreshold: 1
+  failureThreshold: 3
+
+# The kubelet uses liveness probes to know when to restart a container.
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  tcpSocket:
+    port: 80
+  timeoutSeconds: 2
+  periodSeconds: 15
+  successThreshold: 1
+  failureThreshold: 3
+
+# -- (map) Environment variable map
+environmentVars: {}
+# environment:
+#   FOO:
+#     value: bar
+#   BAZ:
+#     value: qux
+
+# -- (list) Environment variable list
+environment: []
+# environment:
+#   - name: FOO
+#     value: bar
+#   - name: BAZ
+#     value: qux
+
+# -- (list) Environment list from kubernetes secrets
+envFrom: []
+# envFrom:
+#   - configMapRef: myapp-config
+#     name: myapp
+#   - secretRef: myapp-secret
+#     name: myapp
+
+# -- (list) List of volumes to create
+volumes: []
+# volumes:
+#   - name: my-volume
+#     secret:
+#       secretName: my-secret-name
+
+# -- (list) List of volumes to attach
+volumeMounts: []
+# volumeMounts:
+#   - name: my-volume
+#     mountPath: /path/to/volume
+#     readOnly: true
+
+initContainer:
+  # -- (bool) If true, creates init-container
+  enabled: false
+
+# -- (list) List of init-container with definition to create. Must define if initContainer.enabled is `true`
+initContainers:
+  - name: service-init
+    image: 457710302499.dkr.ecr.eu-west-2/demo:init
+
+sidecarContainer:
+  # -- (bool) If true, creates sidecar-container
+  enabled: false
+
+# -- (list) List of sidecar-container with definition to create. Must define if sidecarContainer.enabled is `true`
+sidecarContainers:
+  - name: service-sidecar
+    tag: 0.0.1
+    image: 457710302499.dkr.ecr.eu-west-2/demo
+
+revisionHistoryLimit: 10
+rollingUpdate:
+  maxUnavailable: 25%
+  maxSurge: 25%
+
+serviceAccount:
+  # -- (bool) If true, creates service account
+  create: false
+  # The name of the service account to use.
+  # -- If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # -- Provide IAM Role ARN, if create is true.
+  annotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# -- Pod affinity rule. Default affinity rule is set to make sure pods are not deployed on the same node
+affinity: {}
+
+# -- Provide node groups selector
+nodeSelector: {}
+
+# -- If node group is tainted, provide pod tolerations to run on specific node groups
+tolerations: []
+
+# -- (int) Number of replicas to deploy. When HPA is enabled, this value is being ignored
+# Set the replicas to 0 in case we will enable Argo-Rollouts
+replicas: 3
+# Horizontal Pod Autoscaler automatically scales the number of pods based on CPU utilization.
+# https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
+horizontalPodAutoscaler:
+  # -- (bool) Whether to enable hpa. Set to true for Prod
+  enabled: false
+  # -- (int) when true, this value should be equal to number of replicas in deployment. Must be >1 for production
+  minReplicas: 3
+  # -- (int) maximum number of replicas. Set this value as 6x of the minimum pods
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # -- CPU target average utilization of the pods to trigger scalie
+          averageUtilization: 75
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+      selectPolicy: Max
+
+# Vertical Pod autoscaling can recommend values for CPU and memory requests and limits.
+# https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler
+# -- If true, vertical-pod-autoscaler is created in `Off` or `Recommendation` updateMode
+verticalPodAutoscaler:
+  enabled: false
+  goldilocks:
+    # -- if true, enable goldilocks to check vpa Recommendation
+    enabled: true
+
+podDisruptionBudget:
+  enabled: true  # If true, PodDisruptionBudget is created. Recommended to set `true` for production usage
+  minAvailable: 10%  # Minimum available replicas during disruption; ignored if there is no PodDisruptionBudget
+
+# Container lifecycle hook
+lifecycle:
+  # -- Pre stop command to run just before handling a termination request from API. This helps in graceful termination of the pods
+  preStop:
+    exec:
+      command: ["/bin/sh", "-c", "sleep 2"]
+
+dnsPolicy: ClusterFirst
+
+# -- (map) dns Config
+dnsConfig: {}
+  # nameservers:
+  #   - 1.2.3.4
+  # searches:
+  #   - ns1.svc.cluster-domain.example
+  #   - my.dns.search.suffix
+  # options:
+  #   - name: ndots
+  #     value: "2"
+  #   - name: edns0
+
+externalSecret:
+  # -- If true, externalSecret will be created
+  enabled: false
+  name: ""
+  # -- Use the new external-secrets operator to manage external secrets.
+  useExternalSecretOperator: false
+  # -- Backend type: vault or systemManager. Default: vault.
+  backendType: vault
+  # -- Secret Store: vault-dhhmena, ssm-dhhmena, ssm-ew2-dhhmena (requires useExternalSecretOperator set to true). Default: vault-dhhmena.
+  secretStore: vault-dhhmena
+  # -- Required when backendType is vault. Change this EKS cluster name. Remove this when backendType is systemManager.
+  vaultMountPoint: kubernetes-rilo-dev-eks-cluster
+  # -- Required when backendType is vault. Remove this when backendType is systemManager.
+  vaultRole: external-secrets
+  # -- dataFrom is used to retrieve all values from a specific path
+  dataFrom: []
+  # -- List of map of objects to fetch from the secret backend
+  dataVars: {}
+  data: []
+  # dataVars: # vault
+  #   license_key:
+  #     key: secret/data/shared/newrelic/dev
+  #     property: license_key
+  #
+  # data: # systemManager
+  #   config:
+  #     key: /shared/dev/config
+  #
+  # OR
+  #
+  # data: # vault
+  # - name: license_key
+  #   key: secret/data/shared/newrelic/dev
+  #   property: license_key
+  #
+  # data: # systemManager
+  # - name: config
+  #   key: /shared/dev/config
+
+## Deployment annotations
+##
+annotations: {}
+
+## Pod annotations
+##
+podAnnotations: {}
+
+## if we should tell Kubernetes Autoscaler that its safe to evict these pods
+##
+safeToEvict: true
+
+# Enabling the Argo Rollouts for advanced and progressive deployment "Canary" or "blue-green"
+argoRollouts:
+  enabled: false
+  strategy: blue-green
+  autoPromotionEnabled: true
+  dynamicStableScale: false
+  abortScaleDownDelaySeconds: 300
+  progressDeadlineSeconds: 1200
+  previewReplicaCount: 1
+  steps: |-
+    - setWeight: 20
+    - pause:
+        duration: 5s
+    - setWeight: 40
+    - pause:
+        duration: 4s
+    - setWeight: 60
+    - pause:
+        duration: 3s
+    - setWeight: 80
+    - pause:
+        duration: 2s
+  preview:
+    enabled: true
+  experiment:
+    enabled: false
+  rolloutAnalysis:
+    enabled: false
+    startingStep: 2
+    measurementDuration: 30
+    latency: 5
+    status4xx:
+      failurePercentageThreshold: 1
+    status5xx:
+      failurePercentageThreshold: 1
+    customAnalysis:
+      enabled: false
+    newRelicAnomalies:
+      appName: consumer-web-dev
+
+# Istio implementation
+istio:
+  enabled: false
+  holdApplicationUntilProxyStarts: true
+  resources:
+    enabled: true
+    limits:
+      memory: 1024Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  retries:
+    attempts: 15
+    retryOn: gateway-error,connect-failure,refused-stream
+
+# Support running 50% of pods on SPOT instances
+# This should be enabled on deployments running on linux only systems
+# no need to enabled on dev, qa since all instances are spot but it will not affect the pods scheduling
+spot:
+  enabled: false
+
+# -- (list) hostAliases allows the modification of the hosts file inside a pod
+hostAliases: []
+# hostAliases:
+#   - ip: "127.0.0.1"
+#     hostnames:
+#       - "foo.local"
+#       - "bar.local"
+#   - ip: "10.1.2.3"
+#     hostnames:
+#       - "foo.remote"
+#       - "bar.remote"
+
+datadog:
+  enabled: true
+otel:
+  enabled: true
+
+# Enabling the Keda scaled object for advanced scaling
+kedaScaling:
+  enabled: false
+  annotations: {}  # Add this annotation to scale to 0 --> autoscaling.keda.sh/paused-replicas: "0"
+  pollingInterval: 5
+  cooldownPeriod: 300
+  # new-relic, prometheus, cpu, memory, aws-sqs-queue, kafka
+  trigger:
+    newRelic:
+      enabled: false
+    prometheus:
+      enabled: false
+    cpu:
+      enabled: false
+    sqs:
+      enabled: false
+    kafka:
+      enabled: false
+    datadog:
+      enabled: false

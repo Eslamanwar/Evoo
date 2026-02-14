@@ -1,0 +1,2780 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "The root schema",
+    "description": "The root schema comprises the entire JSON document.",
+    "default": {},
+    "examples": [
+        {
+            "env": "dev",
+            "replicas": 3,
+            "tribe": "sre",
+            "squad": "devx",
+            "nameOverride": "{{ .Release.Name }}",
+            "fullnameOverride": "",
+            "image": {
+                "tag": "v0.1",
+                "repository": "457710302499.dkr.ecr.eu-west-2/demo",
+                "pullPolicy": "IfNotPresent"
+            },
+            "imagePullSecrets": [],
+            "command": [],
+            "args": [],
+            "terminationGracePeriodSeconds": 60,
+            "ingress": {
+                "enabled": true,
+                "sticky": false,
+                "rules": [
+                    "Host(`service.dhhmena.com`)"
+                ],
+                "middlewares": []
+            },
+            "containerPort": 80,
+            "service": {
+                "type": "ClusterIP",
+                "port": 80
+            },
+            "resources": {
+                "limits": {
+                    "memory": "1Gi"
+                },
+                "requests": {
+                    "cpu": "250m",
+                    "memory": "512Mi"
+                }
+            },
+            "startupProbe": {
+                "tcpSocket": {
+                    "port": 80
+                },
+                "initialDelaySeconds": 30,
+                "periodSeconds": 10,
+                "timeoutSeconds": 2,
+                "failureThreshold": 30
+            },
+            "readinessProbe": {
+                "httpGet": {
+                    "path": "/",
+                    "port": 80,
+                    "scheme": "HTTP"
+                },
+                "timeoutSeconds": 2,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "failureThreshold": 3
+            },
+            "livenessProbe": {
+                "tcpSocket": {
+                    "port": 80
+                },
+                "timeoutSeconds": 2,
+                "periodSeconds": 15,
+                "successThreshold": 1,
+                "failureThreshold": 3
+            },
+            "environmentVars": {},
+            "environment": [],
+            "envFrom": [],
+            "volumes": [],
+            "volumeMounts": [],
+            "initContainer": {
+                "enabled": false
+            },
+            "initContainers": [
+                {
+                    "name": "service-init",
+                    "image": "457710302499.dkr.ecr.eu-west-2/demo:init"
+                }
+            ],
+            "sidecarContainer": {
+                "enabled": false
+            },
+            "sidecarContainers": [
+                {
+                    "name": "service-sidecar",
+                    "image": "457710302499.dkr.ecr.eu-west-2/demo:sidecar"
+                }
+            ],
+            "revisionHistoryLimit": 10,
+            "rollingUpdate": {
+                "maxUnavailable": "25%",
+                "maxSurge": "25%"
+            },
+            "serviceAccount": {
+                "create": false,
+                "name": "",
+                "annotations": {}
+            },
+            "podSecurityContext": {},
+            "securityContext": {},
+            "affinity": {},
+            "nodeSelector": {},
+            "tolerations": [],
+            "horizontalPodAutoscaler": {
+                "enabled": false,
+                "minReplicas": 1,
+                "maxReplicas": 6,
+                "metrics": [
+                    {
+                        "type": "Resource",
+                        "resource": {
+                            "name": "cpu",
+                            "target": {
+                                "type": "Utilization",
+                                "averageUtilization": 75
+                            }
+                        }
+                    }
+                ],
+                "behavior": {
+                    "scaleDown": {
+                        "stabilizationWindowSeconds": 300,
+                        "policies": [
+                            {
+                                "type": "Percent",
+                                "value": 100,
+                                "periodSeconds": 15
+                            }
+                        ]
+                    },
+                    "scaleUp": {
+                        "stabilizationWindowSeconds": 0,
+                        "policies": [
+                            {
+                                "type": "Percent",
+                                "value": 100,
+                                "periodSeconds": 15
+                            },
+                            {
+                                "type": "Pods",
+                                "value": 4,
+                                "periodSeconds": 15
+                            }
+                        ],
+                        "selectPolicy": "Max"
+                    }
+                }
+            },
+            "verticalPodAutoscaler": {
+                "enabled": false,
+                "goldilocks": {
+                    "enabled": true
+                }
+            },
+            "podDisruptionBudget": {
+                "enabled": false,
+                "minAvailable": 1
+            },
+            "lifecycle": {
+                "preStop": {
+                    "exec": {
+                        "command": [
+                            "/bin/sh",
+                            "-c",
+                            "sleep 2"
+                        ]
+                    }
+                }
+            },
+            "externalSecret": {
+                "enabled": false,
+                "name": "",
+                "backendType": "vault",
+                "vaultMountPoint": "kubernetes-rilo-dev-eks-cluster",
+                "vaultRole": "external-secrets",
+                "dataFrom": [],
+                "dataVars": {},
+                "data": []
+            },
+            "annotations": {},
+            "podAnnotations": {},
+            "safeToEvict": true,
+            "argoRollouts": {
+                "enabled": false,
+                "strategy": "blue-green",
+                "autoPromotionEnabled": true,
+                "previewReplicaCount": 1,
+                "steps": "- setWeight: 20\n- pause:\n    duration: 5s\n- setWeight: 40\n- pause:\n    duration: 4s\n- setWeight: 60\n- pause:\n    duration: 3s\n- setWeight: 80\n- pause:\n    duration: 2s",
+                "preview": {
+                    "enabled": true
+                },
+                "rolloutAnalysis": {
+                    "enabled": false,
+                    "startingStep": 2,
+                    "measurementDuration": 30,
+                    "latency": 5,
+                    "status4xx": {
+                        "failurePercentageThreshold": 1
+                    },
+                    "status5xx": {
+                        "failurePercentageThreshold": 1
+                    },
+                    "newRelicAnomalies": {
+                        "appName": "consumer-web-dev"
+                    }
+                }
+            },
+            "istio": {
+                "enabled": false,
+                "holdApplicationUntilProxyStarts": true,
+                "resources": {
+                    "enabled": true,
+                    "limits": {
+                        "memory": "1024Mi"
+                    },
+                    "requests": {
+                        "cpu": "100m",
+                        "memory": "128Mi"
+                    }
+                },
+                "retries": {
+                    "attempts": 15,
+                    "retryOn": "gateway-error,connect-failure,refused-stream"
+                }
+            },
+            "spot": {
+                "enabled": false
+            }
+        }
+    ],
+    "required": [
+        "env",
+        "replicas",
+        "tribe",
+        "nameOverride",
+        "fullnameOverride",
+        "image",
+        "imagePullSecrets",
+        "terminationGracePeriodSeconds",
+        "ingress",
+        "containerPort",
+        "service",
+        "resources",
+        "startupProbe",
+        "readinessProbe",
+        "livenessProbe",
+        "environmentVars",
+        "environment",
+        "envFrom",
+        "volumes",
+        "volumeMounts",
+        "initContainer",
+        "initContainers",
+        "sidecarContainer",
+        "sidecarContainers",
+        "revisionHistoryLimit",
+        "rollingUpdate",
+        "serviceAccount",
+        "podSecurityContext",
+        "securityContext",
+        "affinity",
+        "nodeSelector",
+        "tolerations",
+        "horizontalPodAutoscaler",
+        "verticalPodAutoscaler",
+        "podDisruptionBudget",
+        "lifecycle",
+        "externalSecret",
+        "annotations",
+        "podAnnotations",
+        "safeToEvict",
+        "argoRollouts",
+        "istio",
+        "spot"
+    ],
+    "properties": {
+        "env": {
+            "$id": "#/properties/env",
+            "type": "string",
+            "title": "The env schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                "dev"
+            ]
+        },
+        "replicas": {
+            "$id": "#/properties/replicas",
+            "type": "integer",
+            "title": "The replicas schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": 0,
+            "examples": [
+                3
+            ]
+        },
+        "tribe": {
+            "$id": "#/properties/tribe",
+            "type": "string",
+            "title": "The tribe schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                "sre"
+            ]
+        },
+        "squad": {
+            "$id": "#/properties/squad",
+            "type": "string",
+            "title": "The squad schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                "devx"
+            ]
+        },
+        "partOf": {
+            "$id": "#/properties/partOf",
+            "type": "string",
+            "title": "The partOf schema",
+            "description": "Higher level application (if any).",
+            "default": "",
+            "examples": [
+                "shield", "ace", "gem"
+            ]
+        },
+        "nameOverride": {
+            "$id": "#/properties/nameOverride",
+            "type": "string",
+            "title": "The nameOverride schema",
+            "description": "Application name (if different from the release name).",
+            "default": "",
+            "examples": [
+                "shield-manager", "ace-vendor-ranking"
+            ]
+        },
+        "fullnameOverride": {
+            "$id": "#/properties/fullnameOverride",
+            "type": "string",
+            "title": "The fullnameOverride schema",
+            "description": "Service name, used for naming most of the resources (deployment, external secrets, etc.).",
+            "default": "",
+            "examples": [
+                "shield-manager-api", "shield-nexus-orders-consumer", "ace-vendor-ranking-api"
+            ]
+        },
+        "image": {
+            "$id": "#/properties/image",
+            "type": "object",
+            "title": "The image schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "tag": "v0.1",
+                    "repository": "457710302499.dkr.ecr.eu-west-2/demo",
+                    "pullPolicy": "IfNotPresent"
+                }
+            ],
+            "required": [
+                "tag",
+                "repository",
+                "pullPolicy"
+            ],
+            "properties": {
+                "tag": {
+                    "$id": "#/properties/image/properties/tag",
+                    "type": "string",
+                    "title": "The tag schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "v0.1"
+                    ]
+                },
+                "repository": {
+                    "$id": "#/properties/image/properties/repository",
+                    "type": "string",
+                    "title": "The repository schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "457710302499.dkr.ecr.eu-west-2/demo"
+                    ]
+                },
+                "pullPolicy": {
+                    "$id": "#/properties/image/properties/pullPolicy",
+                    "type": "string",
+                    "title": "The pullPolicy schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "IfNotPresent"
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "imagePullSecrets": {
+            "$id": "#/properties/imagePullSecrets",
+            "type": "array",
+            "title": "The imagePullSecrets schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                []
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/imagePullSecrets/items"
+            }
+        },
+        "terminationGracePeriodSeconds": {
+            "$id": "#/properties/terminationGracePeriodSeconds",
+            "type": "integer",
+            "title": "The terminationGracePeriodSeconds schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": 0,
+            "examples": [
+                60
+            ]
+        },
+        "ingress": {
+            "$id": "#/properties/ingress",
+            "type": "object",
+            "title": "The ingress schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": true,
+                    "sticky": false,
+                    "rules": [
+                        "Host(`service.dhhmena.com`)"
+                    ],
+                    "middlewares": []
+                }
+            ],
+            "required": [
+                "enabled",
+                "sticky",
+                "rules",
+                "middlewares"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/ingress/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
+                },
+                "sticky": {
+                    "$id": "#/properties/ingress/properties/sticky",
+                    "type": "boolean",
+                    "title": "The sticky schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "rules": {
+                    "$id": "#/properties/ingress/properties/rules",
+                    "type": "array",
+                    "title": "The rules schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": [],
+                    "examples": [
+                        [
+                            "Host(`service.dhhmena.com`)"
+                        ]
+                    ],
+                    "additionalItems": true,
+                    "items": {
+                        "$id": "#/properties/ingress/properties/rules/items",
+                        "anyOf": [
+                            {
+                                "$id": "#/properties/ingress/properties/rules/items/anyOf/0",
+                                "type": "string",
+                                "title": "The first anyOf schema",
+                                "description": "An explanation about the purpose of this instance.",
+                                "default": "",
+                                "examples": [
+                                    "Host(`service.dhhmena.com`)"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "middlewares": {
+                    "$id": "#/properties/ingress/properties/middlewares",
+                    "type": "array",
+                    "title": "The middlewares schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": [],
+                    "examples": [
+                        []
+                    ],
+                    "additionalItems": true,
+                    "items": {
+                        "$id": "#/properties/ingress/properties/middlewares/items"
+                    }
+                }
+            },
+            "additionalProperties": true
+        },
+        "containerPort": {
+            "$id": "#/properties/containerPort",
+            "type": "integer",
+            "title": "The containerPort schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": 0,
+            "examples": [
+                80
+            ]
+        },
+        "service": {
+            "$id": "#/properties/service",
+            "type": "object",
+            "title": "The service schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "type": "ClusterIP",
+                    "port": 80
+                }
+            ],
+            "required": [
+                "type",
+                "port"
+            ],
+            "properties": {
+                "type": {
+                    "$id": "#/properties/service/properties/type",
+                    "type": "string",
+                    "title": "The type schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "ClusterIP"
+                    ]
+                },
+                "port": {
+                    "$id": "#/properties/service/properties/port",
+                    "type": "integer",
+                    "title": "The port schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        80
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "resources": {
+            "$id": "#/properties/resources",
+            "type": "object",
+            "title": "The resources schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "limits": {
+                        "memory": "1Gi"
+                    },
+                    "requests": {
+                        "cpu": "250m",
+                        "memory": "512Mi"
+                    }
+                }
+            ],
+            "required": [
+                "limits",
+                "requests"
+            ],
+            "properties": {
+                "limits": {
+                    "$id": "#/properties/resources/properties/limits",
+                    "type": "object",
+                    "title": "The limits schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "memory": "1Gi"
+                        }
+                    ],
+                    "required": [
+                        "memory"
+                    ],
+                    "properties": {
+                        "memory": {
+                            "$id": "#/properties/resources/properties/limits/properties/memory",
+                            "type": "string",
+                            "title": "The memory schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": "",
+                            "examples": [
+                                "1Gi"
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                },
+                "requests": {
+                    "$id": "#/properties/resources/properties/requests",
+                    "type": "object",
+                    "title": "The requests schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "cpu": "250m",
+                            "memory": "512Mi"
+                        }
+                    ],
+                    "required": [
+                        "cpu",
+                        "memory"
+                    ],
+                    "properties": {
+                        "cpu": {
+                            "$id": "#/properties/resources/properties/requests/properties/cpu",
+                            "type": "string",
+                            "title": "The cpu schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": "",
+                            "examples": [
+                                "250m"
+                            ]
+                        },
+                        "memory": {
+                            "$id": "#/properties/resources/properties/requests/properties/memory",
+                            "type": "string",
+                            "title": "The memory schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": "",
+                            "examples": [
+                                "512Mi"
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true
+        },
+        "startupProbe": {
+            "$id": "#/properties/startupProbe",
+            "type": "object",
+            "title": "The startupProbe schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "tcpSocket": {
+                        "port": 80
+                    },
+                    "initialDelaySeconds": 30,
+                    "periodSeconds": 10,
+                    "timeoutSeconds": 2,
+                    "failureThreshold": 30
+                }
+            ],
+            "required": [
+                "initialDelaySeconds",
+                "periodSeconds",
+                "timeoutSeconds",
+                "failureThreshold"
+            ],
+            "properties": {
+                "tcpSocket": {
+                    "$id": "#/properties/startupProbe/properties/tcpSocket",
+                    "type": "object",
+                    "title": "The tcpSocket schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "port": 80
+                        }
+                    ],
+                    "required": [
+                        "port"
+                    ],
+                    "properties": {
+                        "port": {
+                            "$id": "#/properties/startupProbe/properties/tcpSocket/properties/port",
+                            "type": "integer",
+                            "title": "The port schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": 0,
+                            "examples": [
+                                80
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                },
+                "initialDelaySeconds": {
+                    "$id": "#/properties/startupProbe/properties/initialDelaySeconds",
+                    "type": "integer",
+                    "title": "The initialDelaySeconds schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        30
+                    ]
+                },
+                "periodSeconds": {
+                    "$id": "#/properties/startupProbe/properties/periodSeconds",
+                    "type": "integer",
+                    "title": "The periodSeconds schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        10
+                    ]
+                },
+                "timeoutSeconds": {
+                    "$id": "#/properties/startupProbe/properties/timeoutSeconds",
+                    "type": "integer",
+                    "title": "The timeoutSeconds schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        2
+                    ]
+                },
+                "failureThreshold": {
+                    "$id": "#/properties/startupProbe/properties/failureThreshold",
+                    "type": "integer",
+                    "title": "The failureThreshold schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        30
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "readinessProbe": {
+            "$id": "#/properties/readinessProbe",
+            "type": "object",
+            "title": "The readinessProbe schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "httpGet": {
+                        "path": "/",
+                        "port": 80,
+                        "scheme": "HTTP"
+                    },
+                    "timeoutSeconds": 2,
+                    "periodSeconds": 10,
+                    "successThreshold": 1,
+                    "failureThreshold": 3
+                }
+            ],
+            "required": [
+                "timeoutSeconds",
+                "periodSeconds",
+                "successThreshold",
+                "failureThreshold"
+            ],
+            "properties": {
+                "httpGet": {
+                    "$id": "#/properties/readinessProbe/properties/httpGet",
+                    "type": "object",
+                    "title": "The httpGet schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "path": "/",
+                            "port": 80,
+                            "scheme": "HTTP"
+                        }
+                    ],
+                    "required": [
+                        "path",
+                        "port",
+                        "scheme"
+                    ],
+                    "properties": {
+                        "path": {
+                            "$id": "#/properties/readinessProbe/properties/httpGet/properties/path",
+                            "type": "string",
+                            "title": "The path schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": "",
+                            "examples": [
+                                "/"
+                            ]
+                        },
+                        "port": {
+                            "$id": "#/properties/readinessProbe/properties/httpGet/properties/port",
+                            "type": "integer",
+                            "title": "The port schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": 0,
+                            "examples": [
+                                80
+                            ]
+                        },
+                        "scheme": {
+                            "$id": "#/properties/readinessProbe/properties/httpGet/properties/scheme",
+                            "type": "string",
+                            "title": "The scheme schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": "",
+                            "examples": [
+                                "HTTP"
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                },
+                "timeoutSeconds": {
+                    "$id": "#/properties/readinessProbe/properties/timeoutSeconds",
+                    "type": "integer",
+                    "title": "The timeoutSeconds schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        2
+                    ]
+                },
+                "periodSeconds": {
+                    "$id": "#/properties/readinessProbe/properties/periodSeconds",
+                    "type": "integer",
+                    "title": "The periodSeconds schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        10
+                    ]
+                },
+                "successThreshold": {
+                    "$id": "#/properties/readinessProbe/properties/successThreshold",
+                    "type": "integer",
+                    "title": "The successThreshold schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        1
+                    ]
+                },
+                "failureThreshold": {
+                    "$id": "#/properties/readinessProbe/properties/failureThreshold",
+                    "type": "integer",
+                    "title": "The failureThreshold schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        3
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "livenessProbe": {
+            "$id": "#/properties/livenessProbe",
+            "type": "object",
+            "title": "The livenessProbe schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "tcpSocket": {
+                        "port": 80
+                    },
+                    "timeoutSeconds": 2,
+                    "periodSeconds": 15,
+                    "successThreshold": 1,
+                    "failureThreshold": 3
+                }
+            ],
+            "required": [
+                "timeoutSeconds",
+                "periodSeconds",
+                "successThreshold",
+                "failureThreshold"
+            ],
+            "properties": {
+                "tcpSocket": {
+                    "$id": "#/properties/livenessProbe/properties/tcpSocket",
+                    "type": "object",
+                    "title": "The tcpSocket schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "port": 80
+                        }
+                    ],
+                    "required": [
+                        "port"
+                    ],
+                    "properties": {
+                        "port": {
+                            "$id": "#/properties/livenessProbe/properties/tcpSocket/properties/port",
+                            "type": "integer",
+                            "title": "The port schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": 0,
+                            "examples": [
+                                80
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                },
+                "timeoutSeconds": {
+                    "$id": "#/properties/livenessProbe/properties/timeoutSeconds",
+                    "type": "integer",
+                    "title": "The timeoutSeconds schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        2
+                    ]
+                },
+                "periodSeconds": {
+                    "$id": "#/properties/livenessProbe/properties/periodSeconds",
+                    "type": "integer",
+                    "title": "The periodSeconds schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        15
+                    ]
+                },
+                "successThreshold": {
+                    "$id": "#/properties/livenessProbe/properties/successThreshold",
+                    "type": "integer",
+                    "title": "The successThreshold schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        1
+                    ]
+                },
+                "failureThreshold": {
+                    "$id": "#/properties/livenessProbe/properties/failureThreshold",
+                    "type": "integer",
+                    "title": "The failureThreshold schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        3
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "environmentVars": {
+            "$id": "#/properties/environmentVars",
+            "type": "object",
+            "title": "The environmentVars schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": true
+        },
+        "environment": {
+            "$id": "#/properties/environment",
+            "type": "array",
+            "title": "The environment schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                []
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/environment/items"
+            }
+        },
+        "envFrom": {
+            "$id": "#/properties/envFrom",
+            "type": "array",
+            "title": "The envFrom schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                []
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/envFrom/items"
+            }
+        },
+        "volumes": {
+            "$id": "#/properties/volumes",
+            "type": "array",
+            "title": "The volumes schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                []
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/volumes/items"
+            }
+        },
+        "volumeMounts": {
+            "$id": "#/properties/volumeMounts",
+            "type": "array",
+            "title": "The volumeMounts schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                []
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/volumeMounts/items"
+            }
+        },
+        "initContainer": {
+            "$id": "#/properties/initContainer",
+            "type": "object",
+            "title": "The initContainer schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false
+                }
+            ],
+            "required": [
+                "enabled"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/initContainer/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "initContainers": {
+            "$id": "#/properties/initContainers",
+            "type": "array",
+            "title": "The initContainers schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                [
+                    {
+                        "name": "service-init",
+                        "image": "457710302499.dkr.ecr.eu-west-2/demo:init"
+                    }
+                ]
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/initContainers/items",
+                "anyOf": [
+                    {
+                        "$id": "#/properties/initContainers/items/anyOf/0",
+                        "type": "object",
+                        "title": "The first anyOf schema",
+                        "description": "An explanation about the purpose of this instance.",
+                        "default": {},
+                        "examples": [
+                            {
+                                "name": "service-init",
+                                "image": "457710302499.dkr.ecr.eu-west-2/demo:init"
+                            }
+                        ],
+                        "required": [
+                            "name",
+                            "image"
+                        ],
+                        "properties": {
+                            "name": {
+                                "$id": "#/properties/initContainers/items/anyOf/0/properties/name",
+                                "type": "string",
+                                "title": "The name schema",
+                                "description": "An explanation about the purpose of this instance.",
+                                "default": "",
+                                "examples": [
+                                    "service-init"
+                                ]
+                            },
+                            "image": {
+                                "$id": "#/properties/initContainers/items/anyOf/0/properties/image",
+                                "type": "string",
+                                "title": "The image schema",
+                                "description": "An explanation about the purpose of this instance.",
+                                "default": "",
+                                "examples": [
+                                    "457710302499.dkr.ecr.eu-west-2/demo:init"
+                                ]
+                            }
+                        },
+                        "additionalProperties": true
+                    }
+                ]
+            }
+        },
+        "sidecarContainer": {
+            "$id": "#/properties/sidecarContainer",
+            "type": "object",
+            "title": "The sidecarContainer schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false
+                }
+            ],
+            "required": [
+                "enabled"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/sidecarContainer/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "sidecarContainers": {
+            "$id": "#/properties/sidecarContainers",
+            "type": "array",
+            "title": "The sidecarContainers schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                [
+                    {
+                        "name": "service-sidecar",
+                        "image": "457710302499.dkr.ecr.eu-west-2/demo:sidecar"
+                    }
+                ]
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/sidecarContainers/items",
+                "anyOf": [
+                    {
+                        "$id": "#/properties/sidecarContainers/items/anyOf/0",
+                        "type": "object",
+                        "title": "The first anyOf schema",
+                        "description": "An explanation about the purpose of this instance.",
+                        "default": {},
+                        "examples": [
+                            {
+                                "name": "service-sidecar",
+                                "image": "457710302499.dkr.ecr.eu-west-2/demo:sidecar"
+                            }
+                        ],
+                        "required": [
+                            "name",
+                            "image"
+                        ],
+                        "properties": {
+                            "name": {
+                                "$id": "#/properties/sidecarContainers/items/anyOf/0/properties/name",
+                                "type": "string",
+                                "title": "The name schema",
+                                "description": "An explanation about the purpose of this instance.",
+                                "default": "",
+                                "examples": [
+                                    "service-sidecar"
+                                ]
+                            },
+                            "image": {
+                                "$id": "#/properties/sidecarContainers/items/anyOf/0/properties/image",
+                                "type": "string",
+                                "title": "The image schema",
+                                "description": "An explanation about the purpose of this instance.",
+                                "default": "",
+                                "examples": [
+                                    "457710302499.dkr.ecr.eu-west-2/demo:sidecar"
+                                ]
+                            }
+                        },
+                        "additionalProperties": true
+                    }
+                ]
+            }
+        },
+        "revisionHistoryLimit": {
+            "$id": "#/properties/revisionHistoryLimit",
+            "type": "integer",
+            "title": "The revisionHistoryLimit schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": 0,
+            "examples": [
+                10
+            ]
+        },
+        "rollingUpdate": {
+            "$id": "#/properties/rollingUpdate",
+            "type": "object",
+            "title": "The rollingUpdate schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "maxUnavailable": "25%",
+                    "maxSurge": "25%"
+                }
+            ],
+            "required": [
+                "maxUnavailable",
+                "maxSurge"
+            ],
+            "properties": {
+                "maxUnavailable": {
+                    "$id": "#/properties/rollingUpdate/properties/maxUnavailable",
+                    "type": "string",
+                    "title": "The maxUnavailable schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "25%"
+                    ]
+                },
+                "maxSurge": {
+                    "$id": "#/properties/rollingUpdate/properties/maxSurge",
+                    "type": "string",
+                    "title": "The maxSurge schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "25%"
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "serviceAccount": {
+            "$id": "#/properties/serviceAccount",
+            "type": "object",
+            "title": "The serviceAccount schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "create": false,
+                    "name": "",
+                    "annotations": {}
+                }
+            ],
+            "required": [
+                "create",
+                "name",
+                "annotations"
+            ],
+            "properties": {
+                "create": {
+                    "$id": "#/properties/serviceAccount/properties/create",
+                    "type": "boolean",
+                    "title": "The create schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "name": {
+                    "$id": "#/properties/serviceAccount/properties/name",
+                    "type": "string",
+                    "title": "The name schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        ""
+                    ]
+                },
+                "annotations": {
+                    "$id": "#/properties/serviceAccount/properties/annotations",
+                    "type": "object",
+                    "title": "The annotations schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {}
+                    ],
+                    "required": [],
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true
+        },
+        "podSecurityContext": {
+            "$id": "#/properties/podSecurityContext",
+            "type": "object",
+            "title": "The podSecurityContext schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": true
+        },
+        "securityContext": {
+            "$id": "#/properties/securityContext",
+            "type": "object",
+            "title": "The securityContext schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": true
+        },
+        "affinity": {
+            "$id": "#/properties/affinity",
+            "type": "object",
+            "title": "The affinity schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": true
+        },
+        "nodeSelector": {
+            "$id": "#/properties/nodeSelector",
+            "type": "object",
+            "title": "The nodeSelector schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": true
+        },
+        "tolerations": {
+            "$id": "#/properties/tolerations",
+            "type": "array",
+            "title": "The tolerations schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+                []
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/tolerations/items"
+            }
+        },
+        "horizontalPodAutoscaler": {
+            "$id": "#/properties/horizontalPodAutoscaler",
+            "type": "object",
+            "title": "The horizontalPodAutoscaler schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false,
+                    "minReplicas": 1,
+                    "maxReplicas": 6,
+                    "metrics": [
+                        {
+                            "type": "Resource",
+                            "resource": {
+                                "name": "cpu",
+                                "target": {
+                                    "type": "Utilization",
+                                    "averageUtilization": 75
+                                }
+                            }
+                        }
+                    ],
+                    "behavior": {
+                        "scaleDown": {
+                            "stabilizationWindowSeconds": 300,
+                            "policies": [
+                                {
+                                    "type": "Percent",
+                                    "value": 100,
+                                    "periodSeconds": 15
+                                }
+                            ]
+                        },
+                        "scaleUp": {
+                            "stabilizationWindowSeconds": 0,
+                            "policies": [
+                                {
+                                    "type": "Percent",
+                                    "value": 100,
+                                    "periodSeconds": 15
+                                },
+                                {
+                                    "type": "Pods",
+                                    "value": 4,
+                                    "periodSeconds": 15
+                                }
+                            ],
+                            "selectPolicy": "Max"
+                        }
+                    }
+                }
+            ],
+            "required": [
+                "enabled",
+                "minReplicas",
+                "maxReplicas",
+                "metrics",
+                "behavior"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/horizontalPodAutoscaler/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "minReplicas": {
+                    "$id": "#/properties/horizontalPodAutoscaler/properties/minReplicas",
+                    "type": "integer",
+                    "title": "The minReplicas schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 1,
+                    "minimum": 1,
+                    "examples": [
+                        3
+                    ]
+                },
+                "maxReplicas": {
+                    "$id": "#/properties/horizontalPodAutoscaler/properties/maxReplicas",
+                    "type": "integer",
+                    "title": "The maxReplicas schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 6,
+                    "maximum": 300,
+                    "examples": [
+                        10
+                    ]
+                },
+                "metrics": {
+                    "$id": "#/properties/horizontalPodAutoscaler/properties/metrics",
+                    "type": "array",
+                    "title": "The metrics schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": [],
+                    "examples": [
+                        [
+                            {
+                                "type": "Resource",
+                                "resource": {
+                                    "name": "cpu",
+                                    "target": {
+                                        "type": "Utilization",
+                                        "averageUtilization": 75
+                                    }
+                                }
+                            }
+                        ]
+                    ],
+                    "additionalItems": true,
+                    "items": {
+                        "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items",
+                        "anyOf": [
+                            {
+                                "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items/anyOf/0",
+                                "type": "object",
+                                "title": "The first anyOf schema",
+                                "description": "An explanation about the purpose of this instance.",
+                                "default": {},
+                                "examples": [
+                                    {
+                                        "type": "Resource",
+                                        "resource": {
+                                            "name": "cpu",
+                                            "target": {
+                                                "type": "Utilization",
+                                                "averageUtilization": 75
+                                            }
+                                        }
+                                    }
+                                ],
+                                "required": [
+                                    "type",
+                                    "resource"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items/anyOf/0/properties/type",
+                                        "type": "string",
+                                        "title": "The type schema",
+                                        "description": "An explanation about the purpose of this instance.",
+                                        "default": "",
+                                        "examples": [
+                                            "Resource"
+                                        ]
+                                    },
+                                    "resource": {
+                                        "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items/anyOf/0/properties/resource",
+                                        "type": "object",
+                                        "title": "The resource schema",
+                                        "description": "An explanation about the purpose of this instance.",
+                                        "default": {},
+                                        "examples": [
+                                            {
+                                                "name": "cpu",
+                                                "target": {
+                                                    "type": "Utilization",
+                                                    "averageUtilization": 75
+                                                }
+                                            }
+                                        ],
+                                        "required": [
+                                            "name",
+                                            "target"
+                                        ],
+                                        "properties": {
+                                            "name": {
+                                                "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items/anyOf/0/properties/resource/properties/name",
+                                                "type": "string",
+                                                "title": "The name schema",
+                                                "description": "An explanation about the purpose of this instance.",
+                                                "default": "",
+                                                "examples": [
+                                                    "cpu"
+                                                ]
+                                            },
+                                            "target": {
+                                                "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items/anyOf/0/properties/resource/properties/target",
+                                                "type": "object",
+                                                "title": "The target schema",
+                                                "description": "An explanation about the purpose of this instance.",
+                                                "default": {},
+                                                "examples": [
+                                                    {
+                                                        "type": "Utilization",
+                                                        "averageUtilization": 75
+                                                    }
+                                                ],
+                                                "required": [
+                                                    "type",
+                                                    "averageUtilization"
+                                                ],
+                                                "properties": {
+                                                    "type": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items/anyOf/0/properties/resource/properties/target/properties/type",
+                                                        "type": "string",
+                                                        "title": "The type schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": "",
+                                                        "examples": [
+                                                            "Utilization"
+                                                        ]
+                                                    },
+                                                    "averageUtilization": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/metrics/items/anyOf/0/properties/resource/properties/target/properties/averageUtilization",
+                                                        "type": "integer",
+                                                        "title": "The averageUtilization schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": 0,
+                                                        "examples": [
+                                                            75
+                                                        ]
+                                                    }
+                                                },
+                                                "additionalProperties": true
+                                            }
+                                        },
+                                        "additionalProperties": true
+                                    }
+                                },
+                                "additionalProperties": true
+                            }
+                        ]
+                    }
+                },
+                "behavior": {
+                    "$id": "#/properties/horizontalPodAutoscaler/properties/behavior",
+                    "type": "object",
+                    "title": "The behavior schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "scaleDown": {
+                                "stabilizationWindowSeconds": 300,
+                                "policies": [
+                                    {
+                                        "type": "Percent",
+                                        "value": 100,
+                                        "periodSeconds": 15
+                                    }
+                                ]
+                            },
+                            "scaleUp": {
+                                "stabilizationWindowSeconds": 0,
+                                "policies": [
+                                    {
+                                        "type": "Percent",
+                                        "value": 100,
+                                        "periodSeconds": 15
+                                    },
+                                    {
+                                        "type": "Pods",
+                                        "value": 4,
+                                        "periodSeconds": 15
+                                    }
+                                ],
+                                "selectPolicy": "Max"
+                            }
+                        }
+                    ],
+                    "required": [
+                        "scaleDown",
+                        "scaleUp"
+                    ],
+                    "properties": {
+                        "scaleDown": {
+                            "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown",
+                            "type": "object",
+                            "title": "The scaleDown schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "stabilizationWindowSeconds": 300,
+                                    "policies": [
+                                        {
+                                            "type": "Percent",
+                                            "value": 100,
+                                            "periodSeconds": 15
+                                        }
+                                    ]
+                                }
+                            ],
+                            "required": [
+                                "stabilizationWindowSeconds",
+                                "policies"
+                            ],
+                            "properties": {
+                                "stabilizationWindowSeconds": {
+                                    "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown/properties/stabilizationWindowSeconds",
+                                    "type": "integer",
+                                    "title": "The stabilizationWindowSeconds schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": 0,
+                                    "examples": [
+                                        300
+                                    ]
+                                },
+                                "policies": {
+                                    "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown/properties/policies",
+                                    "type": "array",
+                                    "title": "The policies schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": [],
+                                    "examples": [
+                                        [
+                                            {
+                                                "type": "Percent",
+                                                "value": 100,
+                                                "periodSeconds": 15
+                                            }
+                                        ]
+                                    ],
+                                    "additionalItems": true,
+                                    "items": {
+                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown/properties/policies/items",
+                                        "anyOf": [
+                                            {
+                                                "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown/properties/policies/items/anyOf/0",
+                                                "type": "object",
+                                                "title": "The first anyOf schema",
+                                                "description": "An explanation about the purpose of this instance.",
+                                                "default": {},
+                                                "examples": [
+                                                    {
+                                                        "type": "Percent",
+                                                        "value": 100,
+                                                        "periodSeconds": 15
+                                                    }
+                                                ],
+                                                "required": [
+                                                    "type",
+                                                    "value",
+                                                    "periodSeconds"
+                                                ],
+                                                "properties": {
+                                                    "type": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown/properties/policies/items/anyOf/0/properties/type",
+                                                        "type": "string",
+                                                        "title": "The type schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": "",
+                                                        "examples": [
+                                                            "Percent"
+                                                        ]
+                                                    },
+                                                    "value": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown/properties/policies/items/anyOf/0/properties/value",
+                                                        "type": "integer",
+                                                        "title": "The value schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": 0,
+                                                        "examples": [
+                                                            100
+                                                        ]
+                                                    },
+                                                    "periodSeconds": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleDown/properties/policies/items/anyOf/0/properties/periodSeconds",
+                                                        "type": "integer",
+                                                        "title": "The periodSeconds schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": 0,
+                                                        "examples": [
+                                                            15
+                                                        ]
+                                                    }
+                                                },
+                                                "additionalProperties": true
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "additionalProperties": true
+                        },
+                        "scaleUp": {
+                            "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp",
+                            "type": "object",
+                            "title": "The scaleUp schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "stabilizationWindowSeconds": 0,
+                                    "policies": [
+                                        {
+                                            "type": "Percent",
+                                            "value": 100,
+                                            "periodSeconds": 15
+                                        },
+                                        {
+                                            "type": "Pods",
+                                            "value": 4,
+                                            "periodSeconds": 15
+                                        }
+                                    ],
+                                    "selectPolicy": "Max"
+                                }
+                            ],
+                            "required": [
+                                "stabilizationWindowSeconds",
+                                "policies",
+                                "selectPolicy"
+                            ],
+                            "properties": {
+                                "stabilizationWindowSeconds": {
+                                    "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/stabilizationWindowSeconds",
+                                    "type": "integer",
+                                    "title": "The stabilizationWindowSeconds schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": 0,
+                                    "examples": [
+                                        0
+                                    ]
+                                },
+                                "policies": {
+                                    "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/policies",
+                                    "type": "array",
+                                    "title": "The policies schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": [],
+                                    "examples": [
+                                        [
+                                            {
+                                                "type": "Percent",
+                                                "value": 100,
+                                                "periodSeconds": 15
+                                            },
+                                            {
+                                                "type": "Pods",
+                                                "value": 4,
+                                                "periodSeconds": 15
+                                            }
+                                        ]
+                                    ],
+                                    "additionalItems": true,
+                                    "items": {
+                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/policies/items",
+                                        "anyOf": [
+                                            {
+                                                "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/policies/items/anyOf/0",
+                                                "type": "object",
+                                                "title": "The first anyOf schema",
+                                                "description": "An explanation about the purpose of this instance.",
+                                                "default": {},
+                                                "examples": [
+                                                    {
+                                                        "type": "Percent",
+                                                        "value": 100,
+                                                        "periodSeconds": 15
+                                                    }
+                                                ],
+                                                "required": [
+                                                    "type",
+                                                    "value",
+                                                    "periodSeconds"
+                                                ],
+                                                "properties": {
+                                                    "type": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/policies/items/anyOf/0/properties/type",
+                                                        "type": "string",
+                                                        "title": "The type schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": "",
+                                                        "examples": [
+                                                            "Percent"
+                                                        ]
+                                                    },
+                                                    "value": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/policies/items/anyOf/0/properties/value",
+                                                        "type": "integer",
+                                                        "title": "The value schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": 0,
+                                                        "examples": [
+                                                            100
+                                                        ]
+                                                    },
+                                                    "periodSeconds": {
+                                                        "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/policies/items/anyOf/0/properties/periodSeconds",
+                                                        "type": "integer",
+                                                        "title": "The periodSeconds schema",
+                                                        "description": "An explanation about the purpose of this instance.",
+                                                        "default": 0,
+                                                        "examples": [
+                                                            15
+                                                        ]
+                                                    }
+                                                },
+                                                "additionalProperties": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                "selectPolicy": {
+                                    "$id": "#/properties/horizontalPodAutoscaler/properties/behavior/properties/scaleUp/properties/selectPolicy",
+                                    "type": "string",
+                                    "title": "The selectPolicy schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": "",
+                                    "examples": [
+                                        "Max"
+                                    ]
+                                }
+                            },
+                            "additionalProperties": true
+                        }
+                    },
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true
+        },
+        "verticalPodAutoscaler": {
+            "$id": "#/properties/verticalPodAutoscaler",
+            "type": "object",
+            "title": "The verticalPodAutoscaler schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false,
+                    "goldilocks": {
+                        "enabled": true
+                    }
+                }
+            ],
+            "required": [
+                "enabled",
+                "goldilocks"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/verticalPodAutoscaler/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "goldilocks": {
+                    "$id": "#/properties/verticalPodAutoscaler/properties/goldilocks",
+                    "type": "object",
+                    "title": "The goldilocks schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "enabled": true
+                        }
+                    ],
+                    "required": [
+                        "enabled"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "$id": "#/properties/verticalPodAutoscaler/properties/goldilocks/properties/enabled",
+                            "type": "boolean",
+                            "title": "The enabled schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": false,
+                            "examples": [
+                                true
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true
+        },
+        "podDisruptionBudget": {
+            "$id": "#/properties/podDisruptionBudget",
+            "type": "object",
+            "title": "The podDisruptionBudget schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false,
+                    "minAvailable": 1
+                }
+            ],
+            "required": [
+                "enabled",
+                "minAvailable"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/podDisruptionBudget/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "minAvailable": {
+                    "$id": "#/properties/podDisruptionBudget/properties/minAvailable",
+                    "type": "string",
+                    "pattern": "^[0-9]+%?$",
+                    "title": "The minAvailable schema",
+                    "description": "Number of pods from that set that must still be available after the eviction, even in the absence of the evicted pod. Can be either an absolute number or a percentage.",
+                    "default": "",
+                    "examples": [
+                        "30%",
+                        "1"
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "lifecycle": {
+            "$id": "#/properties/lifecycle",
+            "type": "object",
+            "title": "The lifecycle schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "preStop": {
+                        "exec": {
+                            "command": [
+                                "/bin/sh",
+                                "-c",
+                                "sleep 2"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "required": [
+                "preStop"
+            ],
+            "properties": {
+                "preStop": {
+                    "$id": "#/properties/lifecycle/properties/preStop",
+                    "type": "object",
+                    "title": "The preStop schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "exec": {
+                                "command": [
+                                    "/bin/sh",
+                                    "-c",
+                                    "sleep 2"
+                                ]
+                            }
+                        }
+                    ],
+                    "required": [
+                        "exec"
+                    ],
+                    "properties": {
+                        "exec": {
+                            "$id": "#/properties/lifecycle/properties/preStop/properties/exec",
+                            "type": "object",
+                            "title": "The exec schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "command": [
+                                        "/bin/sh",
+                                        "-c",
+                                        "sleep 2"
+                                    ]
+                                }
+                            ],
+                            "required": [
+                                "command"
+                            ],
+                            "properties": {
+                                "command": {
+                                    "$id": "#/properties/lifecycle/properties/preStop/properties/exec/properties/command",
+                                    "type": "array",
+                                    "title": "The command schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": [],
+                                    "examples": [
+                                        [
+                                            "/bin/sh",
+                                            "-c"
+                                        ]
+                                    ],
+                                    "additionalItems": true,
+                                    "items": {
+                                        "$id": "#/properties/lifecycle/properties/preStop/properties/exec/properties/command/items",
+                                        "anyOf": [
+                                            {
+                                                "$id": "#/properties/lifecycle/properties/preStop/properties/exec/properties/command/items/anyOf/0",
+                                                "type": "string",
+                                                "title": "The first anyOf schema",
+                                                "description": "An explanation about the purpose of this instance.",
+                                                "default": "",
+                                                "examples": [
+                                                    "/bin/sh",
+                                                    "-c"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "additionalProperties": true
+                        }
+                    },
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true
+        },
+        "externalSecret": {
+            "$id": "#/properties/externalSecret",
+            "type": "object",
+            "title": "The externalSecret schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false,
+                    "name": "",
+                    "backendType": "vault",
+                    "vaultMountPoint": "kubernetes-rilo-dev-eks-cluster",
+                    "vaultRole": "external-secrets",
+                    "dataFrom": [],
+                    "dataVars": {},
+                    "data": []
+                }
+            ],
+            "required": [
+                "enabled",
+                "name",
+                "backendType",
+                "vaultMountPoint",
+                "vaultRole",
+                "dataFrom",
+                "dataVars",
+                "data"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/externalSecret/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "name": {
+                    "$id": "#/properties/externalSecret/properties/name",
+                    "type": "string",
+                    "title": "The name schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        ""
+                    ]
+                },
+                "backendType": {
+                    "$id": "#/properties/externalSecret/properties/backendType",
+                    "type": "string",
+                    "title": "The backendType schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "vault"
+                    ]
+                },
+                "vaultMountPoint": {
+                    "$id": "#/properties/externalSecret/properties/vaultMountPoint",
+                    "type": "string",
+                    "title": "The vaultMountPoint schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "kubernetes-rilo-dev-eks-cluster"
+                    ]
+                },
+                "vaultRole": {
+                    "$id": "#/properties/externalSecret/properties/vaultRole",
+                    "type": "string",
+                    "title": "The vaultRole schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "external-secrets"
+                    ]
+                },
+                "dataFrom": {
+                    "$id": "#/properties/externalSecret/properties/dataFrom",
+                    "type": "array",
+                    "title": "The dataFrom schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": [],
+                    "examples": [
+                        []
+                    ],
+                    "additionalItems": true,
+                    "items": {
+                        "$id": "#/properties/externalSecret/properties/dataFrom/items"
+                    }
+                },
+                "dataVars": {
+                    "$id": "#/properties/externalSecret/properties/dataVars",
+                    "type": "object",
+                    "title": "The dataVars schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {}
+                    ],
+                    "required": [],
+                    "additionalProperties": true
+                },
+                "data": {
+                    "$id": "#/properties/externalSecret/properties/data",
+                    "type": "array",
+                    "title": "The data schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": [],
+                    "examples": [
+                        []
+                    ],
+                    "additionalItems": true,
+                    "items": {
+                        "$id": "#/properties/externalSecret/properties/data/items"
+                    }
+                }
+            },
+            "additionalProperties": true
+        },
+        "annotations": {
+            "$id": "#/properties/annotations",
+            "type": "object",
+            "title": "The annotations schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": true
+        },
+        "podAnnotations": {
+            "$id": "#/properties/podAnnotations",
+            "type": "object",
+            "title": "The podAnnotations schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": true
+        },
+        "safeToEvict": {
+            "$id": "#/properties/safeToEvict",
+            "type": "boolean",
+            "title": "The safeToEvict schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": false,
+            "examples": [
+                true
+            ]
+        },
+        "argoRollouts": {
+            "$id": "#/properties/argoRollouts",
+            "type": "object",
+            "title": "The argoRollouts schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false,
+                    "strategy": "blue-green",
+                    "autoPromotionEnabled": true,
+                    "previewReplicaCount": 1,
+                    "steps": "- setWeight: 20\n- pause:\n    duration: 5s\n- setWeight: 40\n- pause:\n    duration: 4s\n- setWeight: 60\n- pause:\n    duration: 3s\n- setWeight: 80\n- pause:\n    duration: 2s",
+                    "preview": {
+                        "enabled": true
+                    },
+                    "rolloutAnalysis": {
+                        "enabled": false,
+                        "startingStep": 2,
+                        "measurementDuration": 30,
+                        "latency": 5,
+                        "status4xx": {
+                            "failurePercentageThreshold": 1
+                        },
+                        "status5xx": {
+                            "failurePercentageThreshold": 1
+                        },
+                        "newRelicAnomalies": {
+                            "appName": "consumer-web-dev"
+                        }
+                    }
+                }
+            ],
+            "required": [
+                "enabled",
+                "strategy",
+                "autoPromotionEnabled",
+                "previewReplicaCount",
+                "steps",
+                "preview",
+                "rolloutAnalysis"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/argoRollouts/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "strategy": {
+                    "$id": "#/properties/argoRollouts/properties/strategy",
+                    "type": "string",
+                    "title": "The strategy schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "blue-green"
+                    ]
+                },
+                "autoPromotionEnabled": {
+                    "$id": "#/properties/argoRollouts/properties/autoPromotionEnabled",
+                    "type": "boolean",
+                    "title": "The autoPromotionEnabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
+                },
+                "previewReplicaCount": {
+                    "$id": "#/properties/argoRollouts/properties/previewReplicaCount",
+                    "type": "integer",
+                    "title": "The previewReplicaCount schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        1
+                    ]
+                },
+                "steps": {
+                    "$id": "#/properties/argoRollouts/properties/steps",
+                    "type": "string",
+                    "title": "The steps schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "- setWeight: 20\n- pause:\n    duration: 5s\n- setWeight: 40\n- pause:\n    duration: 4s\n- setWeight: 60\n- pause:\n    duration: 3s\n- setWeight: 80\n- pause:\n    duration: 2s"
+                    ]
+                },
+                "preview": {
+                    "$id": "#/properties/argoRollouts/properties/preview",
+                    "type": "object",
+                    "title": "The preview schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "enabled": true
+                        }
+                    ],
+                    "required": [
+                        "enabled"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "$id": "#/properties/argoRollouts/properties/preview/properties/enabled",
+                            "type": "boolean",
+                            "title": "The enabled schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": false,
+                            "examples": [
+                                true
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                },
+                "rolloutAnalysis": {
+                    "$id": "#/properties/argoRollouts/properties/rolloutAnalysis",
+                    "type": "object",
+                    "title": "The rolloutAnalysis schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "enabled": false,
+                            "startingStep": 2,
+                            "measurementDuration": 30,
+                            "latency": 5,
+                            "status4xx": {
+                                "failurePercentageThreshold": 1
+                            },
+                            "status5xx": {
+                                "failurePercentageThreshold": 1
+                            },
+                            "newRelicAnomalies": {
+                                "appName": "consumer-web-dev"
+                            }
+                        }
+                    ],
+                    "required": [
+                        "enabled",
+                        "startingStep",
+                        "measurementDuration",
+                        "latency",
+                        "status4xx",
+                        "status5xx",
+                        "newRelicAnomalies"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/enabled",
+                            "type": "boolean",
+                            "title": "The enabled schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": false,
+                            "examples": [
+                                false
+                            ]
+                        },
+                        "startingStep": {
+                            "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/startingStep",
+                            "type": "integer",
+                            "title": "The startingStep schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": 0,
+                            "examples": [
+                                2
+                            ]
+                        },
+                        "measurementDuration": {
+                            "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/measurementDuration",
+                            "type": "integer",
+                            "title": "The measurementDuration schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": 0,
+                            "examples": [
+                                30
+                            ]
+                        },
+                        "latency": {
+                            "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/latency",
+                            "type": "number",
+                            "title": "The latency schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": 0,
+                            "examples": [
+                                5
+                            ]
+                        },
+                        "status4xx": {
+                            "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/status4xx",
+                            "type": "object",
+                            "title": "The status4xx schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "failurePercentageThreshold": 1
+                                }
+                            ],
+                            "required": [
+                                "failurePercentageThreshold"
+                            ],
+                            "properties": {
+                                "failurePercentageThreshold": {
+                                    "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/status4xx/properties/failurePercentageThreshold",
+                                    "type": "number",
+                                    "title": "The failurePercentageThreshold schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": 0,
+                                    "examples": [
+                                        1
+                                    ]
+                                }
+                            },
+                            "additionalProperties": true
+                        },
+                        "status5xx": {
+                            "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/status5xx",
+                            "type": "object",
+                            "title": "The status5xx schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "failurePercentageThreshold": 1
+                                }
+                            ],
+                            "required": [
+                                "failurePercentageThreshold"
+                            ],
+                            "properties": {
+                                "failurePercentageThreshold": {
+                                    "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/status5xx/properties/failurePercentageThreshold",
+                                    "type": "number",
+                                    "title": "The failurePercentageThreshold schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": 0,
+                                    "examples": [
+                                        1
+                                    ]
+                                }
+                            },
+                            "additionalProperties": true
+                        },
+                        "newRelicAnomalies": {
+                            "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/newRelicAnomalies",
+                            "type": "object",
+                            "title": "The newRelicAnomalies schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "appName": "consumer-web-dev"
+                                }
+                            ],
+                            "required": [
+                                "appName"
+                            ],
+                            "properties": {
+                                "appName": {
+                                    "$id": "#/properties/argoRollouts/properties/rolloutAnalysis/properties/newRelicAnomalies/properties/appName",
+                                    "type": "string",
+                                    "title": "The appName schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": "",
+                                    "examples": [
+                                        "consumer-web-dev"
+                                    ]
+                                }
+                            },
+                            "additionalProperties": true
+                        }
+                    },
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true
+        },
+        "istio": {
+            "$id": "#/properties/istio",
+            "type": "object",
+            "title": "The istio schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false,
+                    "holdApplicationUntilProxyStarts": true,
+                    "resources": {
+                        "enabled": true,
+                        "limits": {
+                            "memory": "1024Mi"
+                        },
+                        "requests": {
+                            "cpu": "100m",
+                            "memory": "128Mi"
+                        }
+                    },
+                    "retries": {
+                        "attempts": 15,
+                        "retryOn": "gateway-error,connect-failure,refused-stream"
+                    }
+                }
+            ],
+            "required": [
+                "enabled",
+                "holdApplicationUntilProxyStarts",
+                "resources",
+                "retries"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/istio/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                },
+                "holdApplicationUntilProxyStarts": {
+                    "$id": "#/properties/istio/properties/holdApplicationUntilProxyStarts",
+                    "type": "boolean",
+                    "title": "The holdApplicationUntilProxyStarts schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
+                },
+                "resources": {
+                    "$id": "#/properties/istio/properties/resources",
+                    "type": "object",
+                    "title": "The resources schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "enabled": true,
+                            "limits": {
+                                "memory": "1024Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "128Mi"
+                            }
+                        }
+                    ],
+                    "required": [
+                        "enabled",
+                        "limits",
+                        "requests"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "$id": "#/properties/istio/properties/resources/properties/enabled",
+                            "type": "boolean",
+                            "title": "The enabled schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": false,
+                            "examples": [
+                                true
+                            ]
+                        },
+                        "limits": {
+                            "$id": "#/properties/istio/properties/resources/properties/limits",
+                            "type": "object",
+                            "title": "The limits schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "memory": "1024Mi"
+                                }
+                            ],
+                            "required": [
+                                "memory"
+                            ],
+                            "properties": {
+                                "memory": {
+                                    "$id": "#/properties/istio/properties/resources/properties/limits/properties/memory",
+                                    "type": "string",
+                                    "title": "The memory schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": "",
+                                    "examples": [
+                                        "1024Mi"
+                                    ]
+                                }
+                            },
+                            "additionalProperties": true
+                        },
+                        "requests": {
+                            "$id": "#/properties/istio/properties/resources/properties/requests",
+                            "type": "object",
+                            "title": "The requests schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": {},
+                            "examples": [
+                                {
+                                    "cpu": "100m",
+                                    "memory": "128Mi"
+                                }
+                            ],
+                            "required": [
+                                "cpu",
+                                "memory"
+                            ],
+                            "properties": {
+                                "cpu": {
+                                    "$id": "#/properties/istio/properties/resources/properties/requests/properties/cpu",
+                                    "type": "string",
+                                    "title": "The cpu schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": "",
+                                    "examples": [
+                                        "100m"
+                                    ]
+                                },
+                                "memory": {
+                                    "$id": "#/properties/istio/properties/resources/properties/requests/properties/memory",
+                                    "type": "string",
+                                    "title": "The memory schema",
+                                    "description": "An explanation about the purpose of this instance.",
+                                    "default": "",
+                                    "examples": [
+                                        "128Mi"
+                                    ]
+                                }
+                            },
+                            "additionalProperties": true
+                        }
+                    },
+                    "additionalProperties": true
+                },
+                "retries": {
+                    "$id": "#/properties/istio/properties/retries",
+                    "type": "object",
+                    "title": "The retries schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "attempts": 15,
+                            "retryOn": "gateway-error,connect-failure,refused-stream"
+                        }
+                    ],
+                    "required": [
+                        "attempts",
+                        "retryOn"
+                    ],
+                    "properties": {
+                        "attempts": {
+                            "$id": "#/properties/istio/properties/retries/properties/attempts",
+                            "type": "integer",
+                            "title": "The attempts schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": 0,
+                            "examples": [
+                                15
+                            ]
+                        },
+                        "retryOn": {
+                            "$id": "#/properties/istio/properties/retries/properties/retryOn",
+                            "type": "string",
+                            "title": "The retryOn schema",
+                            "description": "An explanation about the purpose of this instance.",
+                            "default": "",
+                            "examples": [
+                                "gateway-error,connect-failure,refused-stream"
+                            ]
+                        }
+                    },
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true
+        },
+        "spot": {
+            "$id": "#/properties/spot",
+            "type": "object",
+            "title": "The spot schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "enabled": false
+                }
+            ],
+            "required": [
+                "enabled"
+            ],
+            "properties": {
+                "enabled": {
+                    "$id": "#/properties/spot/properties/enabled",
+                    "type": "boolean",
+                    "title": "The enabled schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": false,
+                    "examples": [
+                        false
+                    ]
+                }
+            },
+            "additionalProperties": true
+        }
+    },
+    "additionalProperties": true
+}

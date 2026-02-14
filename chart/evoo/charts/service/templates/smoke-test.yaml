@@ -1,0 +1,49 @@
+{{- if (.Values.smokeTest).enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "service.fullname" . }}-smoke-test
+spec:
+  metrics:
+    - name: run-smoke-test
+      provider:
+        job:
+          spec:
+            template:
+              metadata:
+                annotations:
+                  sidecar.istio.io/inject: 'true'
+              spec:
+                containers:
+                  - name: execute-smoke-test
+                    image: "{{ .Values.smokeTest.image.repository }}:{{ tpl .Values.image.tag . }}"
+                    resources:
+                      limits:
+                        cpu: 1
+                        memory: 1Gi
+                      requests:
+                        cpu: 1
+                        memory: 512Mi
+                    lifecycle:
+                      preStop:
+                        exec:
+                          command: ["/bin/sh", "-c", "curl -sf -XPOST http://127.0.0.1:15020/quitquitquit || true"]
+                    env:
+                      {{- if .Values.smokeTest.environment }}
+                          {{- toYaml .Values.smokeTest.environment | nindent 22 }}
+                      {{- end }}
+                    {{- with .Values.smokeTest.command }}
+                    command:
+                      {{- toYaml . | nindent 22 }}
+                    {{- end }}
+                    {{- with .Values.smokeTest.args }}
+                    args:
+                      {{- toYaml . | nindent 22 }}
+                    {{- end }}
+                restartPolicy: Never
+            backoffLimit: 2
+      successCondition: "result.exitCode == 0"  # Exit code 0 for success
+      failureCondition: "result.exitCode == 1"  # Exit code 1 for failure
+      interval: 1m
+      count: 1
+{{- end }}

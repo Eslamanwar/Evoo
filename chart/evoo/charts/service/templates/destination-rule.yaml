@@ -1,0 +1,14 @@
+{{- if .Values.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  host: {{ include "service.fullname" . }}.{{ $.Release.Namespace }}.svc.cluster.local
+  {{- if .Values.istio.trafficPolicy }}
+  trafficPolicy:
+    {{- toYaml .Values.istio.trafficPolicy | nindent 4 }}
+  {{- end }}
+{{- end }}

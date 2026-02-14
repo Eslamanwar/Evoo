@@ -1,0 +1,254 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+    tags.datadoghq.com/env: {{ .Values.env }}
+    tags.datadoghq.com/service: {{ include "service.fullname" . }}
+    tags.datadoghq.com/version: {{ .Chart.AppVersion | quote }}
+    admission.datadoghq.com/enabled: "true"
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
+spec:
+{{- if .Values.horizontalPodAutoscaler.enabled }}
+
+{{- $replicas := ternary  .Values.horizontalPodAutoscaler.minReplicas .Values.replicas .Values.horizontalPodAutoscaler.enabled -}}
+{{- if .Values.argoRollouts.enabled }}
+  replicas: 0
+{{ else }}
+{{- if not .Values.horizontalPodAutoscaler.enabled }}
+  replicas: {{ $replicas }}
+{{- end }}
+{{- end }}
+
+
+{{ else }}
+
+{{- $replicas := ternary  .Values.horizontalPodAutoscaler.minReplicas .Values.replicas .Values.kedaScaling.enabled -}}
+{{- if .Values.argoRollouts.enabled }}
+  replicas: 0
+{{ else }}
+{{- if not .Values.kedaScaling.enabled }}
+  replicas: {{ $replicas }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+       maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+       maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
+        {{- if .Values.istio.resources.enabled }}
+        sidecar.istio.io/proxyCPU: {{ .Values.istio.resources.requests.cpu }}
+        sidecar.istio.io/proxyMemory: {{ .Values.istio.resources.requests.memory }}
+        sidecar.istio.io/proxyMemoryLimit: {{ .Values.istio.resources.limits.memory }}
+        {{- end }}
+        {{- if .Values.safeToEvict }}
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        {{- end }}
+        {{- if .Values.istio.holdApplicationUntilProxyStarts }}
+        proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
+        {{- end }}
+      labels:
+        {{- include "service.selectorLabels" . | nindent 8 }}
+        {{- include "service.additionalLabels" . | nindent 8 }}
+        tags.datadoghq.com/env: {{ .Values.env }}
+        tags.datadoghq.com/service: {{ include "service.fullname" . }}
+        tags.datadoghq.com/version: {{ .Chart.AppVersion | quote }}
+        admission.datadoghq.com/enabled: "true"
+    spec:
+    {{- if .Values.spot.enabled }}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: eks.amazonaws.com/capacityType
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+             app.kubernetes.io/name: {{ include "service.fullname" . }}
+    {{- end }}
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "service.serviceAccountName" . }}
+    {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+    {{- end }}
+    {{- if .Values.hostAliases }}
+      hostAliases:
+        {{- toYaml .Values.hostAliases | nindent 8 }}
+    {{- end }}
+    {{- if .Values.securityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ include "service.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ tpl .Values.image.tag . }}"
+        {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+        {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.service.ports }}
+          ports:
+            {{- range $name, $config := .Values.service.ports }}
+            - name: {{ $config.name | default "http" }}
+              containerPort: {{ $config.port }}
+              protocol: {{ $config.protocol | default "TCP" }}
+            {{- end }}
+        {{- else }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+        {{- end }}
+          env:
+        {{- if .Values.datadog.enabled }}
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
+        {{- end }}
+        {{- with .Values.otel }}
+          {{- if .enabled }}
+            # For all Open Telemetry vars, see https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/
+            - name: OTEL_SERVICE_NAME
+              value: "{{ include "service.name" $ }}"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              # Same dh_* attributes that we use for K8s service labels
+              # (see also https://docs.google.com/document/d/1WCPBNddp8kTqNyuzfYV8tlib2DiB87_TlArv5_ST0xY)
+              # (dh_platform, org.name and org.type are attached automatically in the collector)
+              value: "service.version={{ tpl $.Values.image.tag $ }},\
+                    deployment.environment={{ $.Values.env }},\
+                    dh_env={{ $.Values.env }},\
+                    dh_tribe={{ $.Values.tribe }},\
+                    dh_squad={{ $.Values.squad | default $.Release.Namespace }},\
+                    dh_app={{ (include "service.partOf" $) | default (include "service.name" $) }},\
+                    org.tribe={{ $.Values.tribe }},\
+                    org.squad={{ $.Values.squad | default $.Release.Namespace }}"
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://$(HOST_IP):4317
+          {{- end }}
+        {{- end }}
+        {{- if .Values.environmentVars }}
+            {{- range $key, $value := .Values.environmentVars }}
+            - name: {{ $key }}
+              {{- tpl (toYaml $value) $ | nindent 14 }}
+            {{- end }}
+        {{- end }}
+        {{- if .Values.environment }}
+            {{- tpl (toYaml .Values.environment) $ | nindent 12 }}
+        {{- end }}
+        {{- if .Values.envFrom }}
+          envFrom:
+            {{- tpl (toYaml .Values.envFrom) $ | nindent 12 }}
+        {{- end }}
+        {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+        {{- end }}
+        {{- if .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
+        {{- end }}
+        {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+        {{- end }}
+        {{- if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- end }}
+        {{- if .Values.securityContext }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
+        {{- if .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+        {{- end }}
+        {{- if .Values.lifecycle }}
+          lifecycle:
+            {{- toYaml .Values.lifecycle | nindent 12 }}
+        {{- end }}
+    {{- if .Values.sidecarContainer.enabled }}
+      {{- $updatedContainers := list }}
+      {{- range $index, $container := .Values.sidecarContainers }}
+        {{- $updatedImage := printf "%s:%s" $container.image $container.tag }}
+        {{- $updatedContainer := mergeOverwrite $container (dict "image" $updatedImage) }}
+        {{- $updatedContainers = append $updatedContainers (omit $updatedContainer "tag") }}
+      {{- end }}
+      {{- toYaml $updatedContainers | nindent 8 }}
+    {{- end }}
+    {{- if .Values.initContainer.enabled }}
+      initContainers:
+        {{- toYaml .Values.initContainers | nindent 8 }}
+    {{- end }}
+    {{- if .Values.volumes }}
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+    {{- else }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - {{ include "service.fullname" . }}
+    {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+    {{- end }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+    {{- if .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml .Values.dnsConfig | nindent 8 }}
+    {{- end }}
+    {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+    {{- end }}

@@ -1,0 +1,14 @@
+{{- if and (.Values.istio.enabled) (hasKey .Values.istio "authPolicy") }}
+{{- $fullName := include "service.fullname" . -}}
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $fullName }}
+spec:
+  selector:
+    matchLabels: {{- include "service.selectorLabels" . | nindent 6 }}
+  action: DENY
+{{- if .Values.istio.authPolicy }}
+  rules: {{ .Values.istio.authPolicy.rules | toYaml | nindent 4}}
+{{- end }}
+{{- end }}

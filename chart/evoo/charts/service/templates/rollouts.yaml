@@ -1,0 +1,86 @@
+{{- if .Values.argoRollouts.enabled }}
+{{- $Values := .Values }}
+{{- $rolloutStrategyTemplateName := (printf "service.rollout.%s" $Values.argoRollouts.strategy) }}
+{{- $rolloutStrategyTemplateArgs := (dict "Values" $Values "Release" $.Release) }}
+{{- $pause := .pause }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.horizontalPodAutoscaler.enabled }}
+{{- if not .Values.kedaScaling.enabled }}
+  replicas: {{ .Values.replicas }}
+{{- end }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+  {{- if $Values.argoRollouts.progressDeadlineSeconds }}
+  progressDeadlineSeconds: {{ $Values.argoRollouts.progressDeadlineSeconds }}
+  {{- end }}
+  {{- if $Values.argoRollouts.progressDeadlineAbort }}
+  progressDeadlineAbort: true
+  {{- end }}
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "service.fullname" . }}
+  strategy: {{- include $rolloutStrategyTemplateName $rolloutStrategyTemplateArgs | nindent 4 }}
+{{- end}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service.fullname" . }}-preview
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    {{- if and .Values.service.ports }}
+    {{- range $name, $config := .Values.service.ports }}
+    - port: {{ $config.port }}
+      targetPort: {{ $config.targetPort | default "http" }}
+      protocol: {{ $config.protocol | default "TCP" }}
+      name: {{ $config.name | default "http" }}
+    {{- end }}
+    {{ else }}
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- end }}
+  selector:
+    {{- include "service.selectorLabels" . | nindent 4 }}
+{{- if .Values.argoRollouts.experiment.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "service.fullname" . }}-experiment
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+    type: experiment
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    {{- if and .Values.service.ports }}
+    {{- range $name, $config := .Values.service.ports }}
+    - port: {{ $config.port }}
+      targetPort: {{ $config.targetPort | default "http" }}
+      protocol: {{ $config.protocol | default "TCP" }}
+      name: {{ $config.name | default "http" }}
+    {{- end }}
+    {{ else }}
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- end }}
+  selector:
+    {{- include "service.selectorLabels" . | nindent 4 }}
+    type: experiment
+{{- end}}

@@ -1,0 +1,8 @@
+apiVersion: v2
+description: A Helm chart for Kubernetes
+maintainers:
+- email: sre@rilo.dev
+  name: sre-team
+name: service
+type: application
+version: 0.1.4

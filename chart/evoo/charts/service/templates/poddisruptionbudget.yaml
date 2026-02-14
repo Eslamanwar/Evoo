@@ -1,0 +1,13 @@
+{{- if and .Values.podDisruptionBudget.enabled (not (or (eq (int .Values.replicas) 1) (and (eq (int .Values.horizontalPodAutoscaler.maxReplicas) 1) .Values.horizontalPodAutoscaler.enabled) (and (eq (int .Values.kedaScaling.maxReplicaCount) 1) .Values.kedaScaling.enabled))) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+{{- end }}

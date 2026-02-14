@@ -1,0 +1,16 @@
+apiVersion: v2
+name: evoo
+description: A Helm chart for EVOO — Evolutionary Operations Optimizer autonomous SRE agent
+type: application
+version: 0.0.1
+
+maintainers:
+- name: SRE
+  email: sre@talabat.com
+
+dependencies:
+- name: service
+  version: 0.1.4
+- name: temporal-worker
+  version: 0.1.4
+  condition: temporal-worker.enabled

@@ -1,0 +1,48 @@
+{{- if and (.Values.kedaScaling.enabled) (.Values.kedaScaling.trigger.newRelic.secretTargetRef) }}
+{{- $Values := .Values }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ include "service.fullname" . }}-newrelic
+spec:
+{{- if $Values.kedaScaling.trigger.newRelic.secretTargetRef }}
+  secretTargetRef: {{- toYaml $Values.kedaScaling.trigger.newRelic.secretTargetRef | nindent 4 }}
+{{- end }}
+{{- end}}
+---
+{{- if and (.Values.kedaScaling.enabled) (.Values.kedaScaling.trigger.kafka.secretTargetRef) }}
+{{- $Values := .Values }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ include "service.fullname" . }}-kafka
+spec:
+{{- if $Values.kedaScaling.trigger.kafka.secretTargetRef }}
+  secretTargetRef: {{- toYaml $Values.kedaScaling.trigger.kafka.secretTargetRef | nindent 4 }}
+{{- end }}
+{{- end}}
+---
+{{- if and (.Values.kedaScaling.enabled) (.Values.kedaScaling.trigger.datadog.secretTargetRef) }}
+{{- $Values := .Values }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ include "service.fullname" . }}-datadog
+spec:
+{{- if $Values.kedaScaling.trigger.datadog.secretTargetRef }}
+  secretTargetRef: {{- toYaml $Values.kedaScaling.trigger.datadog.secretTargetRef | nindent 4 }}
+{{- end }}
+{{- end}}
+---
+{{- if and (.Values.kedaScaling.enabled) (.Values.kedaScaling.trigger.sqs.secretTargetRef) }}
+{{- $Values := .Values }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ include "service.fullname" . }}-sqs
+spec:
+{{- if $Values.kedaScaling.trigger.sqs.secretTargetRef }}
+  secretTargetRef: {{- toYaml $Values.kedaScaling.trigger.sqs.secretTargetRef | nindent 4 }}
+{{- end }}
+{{- end}}
+---

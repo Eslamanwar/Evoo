@@ -1,0 +1,60 @@
+{{- if .Values.kedaScaling.enabled }}
+{{- $Values := .Values }}
+{{- $kedaTemplateArgs := (dict "Values" $Values "Release" $.Release) }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+  {{- if $Values.kedaScaling.annotations }}
+  annotations:
+    {{- toYaml $Values.kedaScaling.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  scaleTargetRef:
+{{- if $Values.argoRollouts.enabled }}
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+{{ else }}
+    apiVersion: apps/v1
+    kind: Deployment
+{{- end }}
+    name: {{ include "service.fullname" . }}
+    envSourceContainerName: {{ include "service.fullname" . }}
+  pollingInterval: {{ $Values.kedaScaling.pollingInterval }}
+  cooldownPeriod: {{ $Values.kedaScaling.cooldownPeriod }}
+  minReplicaCount: {{ $Values.kedaScaling.minReplicaCount }}
+  maxReplicaCount: {{ $Values.kedaScaling.maxReplicaCount }}
+  {{- if $Values.kedaScaling.fallback }}
+  fallback:
+    failureThreshold: {{ $Values.kedaScaling.fallback.failureThreshold }}
+    replicas: {{ $Values.kedaScaling.fallback.replicas }}
+  {{- end }}
+  {{- if $Values.horizontalPodAutoscaler.behavior }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+    {{- toYaml .Values.horizontalPodAutoscaler.behavior | nindent 8 }}
+  {{- end }}
+  triggers:
+  {{- if $Values.kedaScaling.trigger.newRelic.enabled }}
+    {{- include "service.keda.newRelic" $kedaTemplateArgs | nindent 4 }}
+  {{- end }}
+  {{- if $Values.kedaScaling.trigger.prometheus.enabled }}
+    {{- include "service.keda.prometheus" $kedaTemplateArgs | nindent 4 }}
+  {{- end }}
+  {{- if $Values.kedaScaling.trigger.cpu.enabled }}
+    {{- include "service.keda.cpu" $kedaTemplateArgs | nindent 4 }}
+  {{- end }}
+  {{- if $Values.kedaScaling.trigger.sqs.enabled }}
+    {{- include "service.keda.sqs" $kedaTemplateArgs | nindent 4 }}
+  {{- end }}
+  {{- if $Values.kedaScaling.trigger.kafka.enabled }}
+    {{- include "service.keda.kafka" $kedaTemplateArgs | nindent 4 }}
+  {{- end }}
+  {{- if $Values.kedaScaling.trigger.datadog.enabled }}
+    {{- include "service.keda.datadog" $kedaTemplateArgs | nindent 4 }}
+  {{- end }}
+{{- end }}
+

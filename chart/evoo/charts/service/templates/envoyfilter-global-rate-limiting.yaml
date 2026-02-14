@@ -1,0 +1,153 @@
+{{- if and (.Values.istio.enabled) (hasKey .Values.istio "globalRateLimiter") }}
+{{- $fullName := include "service.fullname" . -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ $fullName }}-global-rl
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  workloadSelector:
+    labels: {{- include "service.selectorLabels" . | nindent 6 }}
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: 'envoy.filters.network.http_connection_manager'
+              subFilter:
+                name: 'envoy.filters.http.router'
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          # Configure the ratelimit filter
+          name: envoy.filters.http.ratelimit
+          typed_config:
+            '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+            # Updated type_url
+            type_url: type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit
+            value:
+              # Note that this has to match the domain in the ratelimit ConfigMap
+              domain: domain-ratelimit
+              enable_x_ratelimit_headers: DRAFT_VERSION_03
+              timeout: 5s
+              failure_mode_deny: true
+              rate_limit_service:
+                grpc_service:
+                  envoy_grpc:
+                    cluster_name: outbound|8081||ratelimit.istio-system.svc.cluster.local
+                    authority: ratelimit.istio-system.svc.cluster.local
+                transport_api_version: V3
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ $fullName }}-rl-actions
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  workloadSelector:
+    labels: {{- include "service.selectorLabels" . | nindent 6 }}
+  configPatches:
+    - applyTo: VIRTUAL_HOST
+      match:
+        context: SIDECAR_INBOUND
+        routeConfiguration:
+          vhost:
+            name: ""
+            route:
+              action: ANY
+      patch:
+        operation: MERGE
+        value:
+          rate_limits:
+            {{- if .Values.istio.globalRateLimiter.rateLimits }}
+            {{- range .Values.istio.globalRateLimiter.rateLimits }}
+            - actions:
+                {{- range .actions }}
+                {{- if .request_headers }}
+                - request_headers:
+                    header_name: {{ .request_headers.header_name }}
+                    descriptor_key: {{ .request_headers.descriptor_key | default .request_headers.header_name }}
+                    {{- if hasKey .request_headers "skip_if_absent" }}
+                    skip_if_absent: {{ .request_headers.skip_if_absent }}
+                    {{- end }}
+                {{- end }}
+                {{- if .header_value_match }}
+                - header_value_match:
+                    descriptor_value: {{ .header_value_match.descriptor_value }}
+                    headers:
+                      {{- range .header_value_match.headers }}
+                      - name: {{ .name }}
+                        {{- if .prefix_match }}
+                        prefix_match: {{ .prefix_match }}
+                        {{- end }}
+                        {{- if .exact_match }}
+                        exact_match: {{ .exact_match }}
+                        {{- end }}
+                        {{- if .invert_match }}
+                        invert_match: {{ .invert_match }}
+                        {{- end }}
+                        {{- if .treat_missing_header_as_empty }}
+                        treat_missing_header_as_empty: {{ .treat_missing_header_as_empty }}
+                        {{- end }}
+                        {{- if .string_match }}
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: {{ .string_match.safe_regex.regex }}
+                        {{- end }}
+                      {{- end }}
+                {{- end }}
+                {{- end }}
+            {{- end }}
+            {{- else }}
+            - actions:
+                {{- if .Values.istio.globalRateLimiter.requestHeaders }}
+                {{- range .Values.istio.globalRateLimiter.requestHeaders }}
+                - request_headers:
+                    header_name: {{ .headerName }}
+                    descriptor_key: {{ .descriptorKey | default .headerName }}
+                    {{- if hasKey . "skipIfAbsent" }}
+                    skip_if_absent: {{ .skipIfAbsent }}
+                    {{- end }}
+                {{- end }}
+                {{- end }}
+                {{- if or .Values.istio.globalRateLimiter.descriptor .Values.istio.globalRateLimiter.httpMethod .Values.istio.globalRateLimiter.path .Values.istio.globalRateLimiter.headers }}
+                - header_value_match:
+                    descriptor_value: {{ .Values.istio.globalRateLimiter.descriptor }}
+                    headers:
+                      {{- if .Values.istio.globalRateLimiter.httpMethod }}
+                      - name: :method
+                        prefix_match: {{ .Values.istio.globalRateLimiter.httpMethod.method }}
+                        {{- if .Values.istio.globalRateLimiter.httpMethod.invertMatch }}
+                        invert_match: {{ .Values.istio.globalRateLimiter.httpMethod.invertMatch }}
+                        {{- end }}
+                      {{- end }}
+
+                      {{- if .Values.istio.globalRateLimiter.path }}
+                      - name: :path
+                        prefix_match: {{ .Values.istio.globalRateLimiter.path.prefix }}
+                        {{- if .Values.istio.globalRateLimiter.path.invertMatch }}
+                        invert_match: {{ .Values.istio.globalRateLimiter.path.invertMatch }}
+                        {{- end }}
+                      {{- end }}
+
+                      {{- range .Values.istio.globalRateLimiter.headers }}
+                      - name: {{ .name }}
+                        {{- if .invertMatch }}
+                        invert_match: {{ .invertMatch }}
+                        {{- end }}
+                        {{- if .treat_missing_header_as_empty }}
+                        treat_missing_header_as_empty: {{ .treat_missing_header_as_empty }}
+                        {{- end }}
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "{{ .regexMatch }}"
+                      {{- end }}
+                {{- end }}
+            {{- end }}
+{{- end }}

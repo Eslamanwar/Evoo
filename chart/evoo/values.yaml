@@ -1,0 +1,241 @@
+service:
+  env: qa
+  tribe: infra
+  replicas: 1
+
+  image:
+    repository: eslamanwar/rilo
+    tag: agents-evoo-v0.1
+    pullPolicy: Always
+
+  serviceAccount:
+    create: false
+
+  command:
+    - "uvicorn"
+    - "project.acp:acp"
+    - "--host"
+    - "0.0.0.0"
+    - "--port"
+    - "8000"
+
+  ingress:
+    enabled: false
+
+  containerPort: 8000
+  service:
+    type: ClusterIP
+    port: 8000
+
+  environment:
+    - name: ACP_URL
+      value: "http://evoo.default.svc.cluster.local"
+    - name: TEMPORAL_ADDRESS
+      value: "agentex-temporal-frontend.default.svc.cluster.local:7233"
+    - name: TEMPORAL_NAMESPACE
+      value: "default"
+    - name: TEMPORAL_TASK_QUEUE
+      value: "evoo-queue"
+    - name: WORKFLOW_TASK_QUEUE
+      value: "evoo-queue"
+    - name: WORKFLOW_NAME
+      value: "EVOOWorkflow"
+    - name: AGENT_NAME
+      value: "evoo"
+    - name: OPENAI_BASE_URL
+      value: "https://openrouter.ai/api/v1"
+    - name: OPENAI_MODEL
+      value: "meta-llama/llama-3.3-70b-instruct"
+    - name: AWS_REGION
+      value: "eu-west-2"
+    - name: OPENAI_API_KEY
+      value: "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"
+    - name: AGENTEX_BASE_URL
+      value: "http://agentex.default.svc.cluster.local:5003"
+    - name: AGENT_API_KEY
+      value: bb2b
+    - name: MAX_LEARNING_RUNS
+      value: "50"
+    - name: EXPLORATION_RATE
+      value: "0.2"
+    - name: MEMORY_FILE_PATH
+      value: "/tmp/evoo_data/evoo_memory.json"
+    - name: STRATEGY_FILE_PATH
+      value: "/tmp/evoo_data/evoo_strategies.json"
+
+  revisionHistoryLimit: 10
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 25%
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 500Mi
+    requests:
+      cpu: 250m
+      memory: 250Mi
+
+  horizontalPodAutoscaler:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 1
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 80
+
+  verticalPodAutoscaler:
+    enabled: false
+
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8000
+      scheme: HTTP
+    timeoutSeconds: 2
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+
+  livenessProbe:
+    tcpSocket:
+      port: 8000
+    timeoutSeconds: 2
+    periodSeconds: 15
+    successThreshold: 1
+    failureThreshold: 3
+
+  startupProbe:
+    tcpSocket:
+      port: 8000
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 30
+
+  externalSecret:
+    enabled: false
+
+  podAnnotations:
+    sidecar.istio.io/inject: "false"
+
+# Istio Default values to be added to new services
+  istio:
+    enabled: false
+    ingress:
+      routes:
+        mainPort: 80
+        match:
+          - host: evoo.dhhmena.com
+            prefix: "/"
+    holdApplicationUntilProxyStarts: true
+    resources:
+      enabled: true
+      limits:
+        memory: 1024Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    retries:
+      attempts: 5
+      retryOn: gateway-error,connect-failure,refused-stream
+    trafficPolicy:
+      loadBalancer:
+        simple: LEAST_CONN
+
+# Temporal Worker subchart configuration
+temporal-worker:
+  enabled: true
+
+  securityContext:
+    privileged: false
+
+  # Global values are inherited from parent chart
+  global:
+    acpType: "async"
+    acpPort: 8000
+    temporalAddress: "agentex-temporal-frontend.default.svc.cluster.local:7233"
+    temporalNamespace: "default"
+    agentexBaseUrl: "http://agentex.default.svc.cluster.local:5003"
+    # Agent configuration passed to subchart
+    agentName: "evoo"
+    agentDescription: "EVOO — Evolutionary Operations Optimizer: Autonomous SRE agent with reward-based learning"
+    # Workflow configuration passed to subchart
+    workflowTaskQueue: "evoo-queue"
+    workflowName: "EVOOWorkflow"
+
+    # Image configuration shared with subcharts
+    image:
+      repository: eslamanwar/rilo
+      tag: agents-evoo-v0.1
+      pullPolicy: Always
+
+  serviceAccount:
+    create: true
+    automount: false
+    annotations: {}
+    name: ""
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  command:
+    - python
+
+  args:
+    - -m
+    - project.run_worker
+
+  env_vars:
+    SERVICE_TYPE: "worker"
+    # AWS Configuration
+    AWS_REGION: "eu-west-2"
+    # Database Configuration
+    DATABASE_URL: postgresql://postgres:postgres@agentex-postgresql:5432/agentex
+    REDIS_URL: redis://agentex-redis-master:6379
+    # Temporal Configuration
+    TEMPORAL_HOST: agentex-temporal-frontend
+    # AgentEx Configuration
+    AGENTEX_SERVER_TASK_QUEUE: agentex-server
+    # Environment
+    ENVIRONMENT: qa
+    # OpenAI Configuration
+    OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
+    OPENAI_MODEL: "deepseek/deepseek-v3.2-exp"
+    OPENAI_API_KEY: "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"
+    AGENT_API_KEY: bb2b
+    # EVOO-specific Configuration
+    MAX_LEARNING_RUNS: "50"
+    EXPLORATION_RATE: "0.2"
+    MEMORY_FILE_PATH: "/tmp/evoo_data/evoo_memory.json"
+    STRATEGY_FILE_PATH: "/tmp/evoo_data/evoo_strategies.json"
+    INCIDENT_INTERVAL_SECONDS: "5"
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 250Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 1
+    targetCPUUtilizationPercentage: 50
+
+  volumes:
+    serviceAccountToken:
+      enabled: true
+      expirationSeconds: 86400
+
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1

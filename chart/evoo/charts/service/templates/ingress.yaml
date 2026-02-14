@@ -1,0 +1,44 @@
+{{- if .Values.ingress.enabled -}}
+{{- $root := . }}
+{{- $fullName := include "service.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- $svcScheme := .Values.service.scheme -}}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - web
+  routes:
+    {{- range $name, $config := .Values.ingress.rules }}
+    - kind: Rule
+    {{- if and $root.Values.service.ports }}
+      match: {{ $config.match | quote }}
+      services:
+      - name: {{ $fullName }}
+        port: {{ $config.port }}
+        priority: {{ $config.priority | default "1" }}
+        scheme: {{ $config.scheme | default "http" }}
+    {{ else }}
+      match: {{ . | quote }}
+      services:
+      - name: {{ $fullName }}
+        port: {{ $svcPort }}
+        scheme: {{ $svcScheme | default "http" }}
+    {{- end }}
+      {{- if $root.Values.ingress.sticky }}
+        sticky:
+          cookie:
+            httpOnly: true
+            name: {{ $fullName }}
+            secure: true
+      {{- end }}
+    {{- if $root.Values.ingress.middlewares }}
+      middlewares:
+        {{- toYaml $root.Values.ingress.middlewares | nindent 8 }}
+    {{- end }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,139 @@
+service:
+  env: qa
+  tribe: infra
+  replicas: 1
+
+  image:
+    tag: 0.0.1
+    repository: eslamanwar/rilo
+    pullPolicy: Always
+
+  serviceAccount:
+    create: false
+
+  ingress:
+    enabled: false
+
+  containerPort: 8000
+  service:
+    type: ClusterIP
+    port: 8000
+
+  revisionHistoryLimit: 10
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 25%
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 500Mi
+    requests:
+      cpu: 250m
+      memory: 250Mi
+
+  horizontalPodAutoscaler:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 1
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 80
+
+  verticalPodAutoscaler:
+    enabled: false
+
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8000
+      scheme: HTTP
+    timeoutSeconds: 2
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+
+  livenessProbe:
+    tcpSocket:
+      port: 8000
+    timeoutSeconds: 2
+    periodSeconds: 15
+    successThreshold: 1
+    failureThreshold: 3
+
+  startupProbe:
+    tcpSocket:
+      port: 8000
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 30
+
+  environment:
+    - name: ACP_URL
+      value: "http://agents-red-cell.agentex.svc.cluster.local"
+    - name: TEMPORAL_ADDRESS
+      value: "agentex-temporal-frontend.agentex.svc.cluster.local:7233"
+    - name: TEMPORAL_NAMESPACE
+      value: "default"
+    - name: TEMPORAL_TASK_QUEUE
+      value: "red-cell-queue"
+    - name: WORKFLOW_TASK_QUEUE
+      value: "red-cell-queue"
+    - name: WORKFLOW_NAME
+      value: "RedCellWorkflow"
+    - name: AGENT_NAME
+      value: "red-cell"
+    - name: AGENTEX_BASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: agents-red-cell
+          key: AGENTEX_BASE_URL
+    - name: AGENT_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: agents-red-cell
+          key: AGENT_API_KEY
+    - name: ALLOWED_EMAILS
+      value: "eslam.anwar96@gmail.com"
+
+  externalSecret:
+    enabled: false
+
+  podAnnotations:
+    sidecar.istio.io/inject: "false"
+
+# Istio Default values to be added to new services
+  istio:
+    enabled: true
+    ingress:
+      routes:
+        mainPort: 80
+        match:
+          - host: red-cell.dhhmena.com
+            prefix: "/"
+    holdApplicationUntilProxyStarts: true
+    resources:
+      enabled: true
+      limits:
+        memory: 1024Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    retries:
+      attempts: 5
+      retryOn: gateway-error,connect-failure,refused-stream
+    trafficPolicy:
+      loadBalancer:
+        simple: LEAST_CONN
+
+# Temporal Worker configuration for QA
+temporal-worker:
+  # Security context for nmap scanning - privileged mode required for full scanning capabilities
+  securityContext:
+    privileged: true
+

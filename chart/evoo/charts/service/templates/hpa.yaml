@@ -1,0 +1,24 @@
+{{- if and (.Values.horizontalPodAutoscaler.enabled) (not .Values.kedaScaling.enabled) }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+{{- if .Values.argoRollouts.enabled }}
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+{{ else }}
+    apiVersion: apps/v1
+    kind: Deployment
+{{- end }}
+    name: {{ include "service.fullname" . }}
+  minReplicas: {{ .Values.horizontalPodAutoscaler.minReplicas }}
+  maxReplicas: {{ .Values.horizontalPodAutoscaler.maxReplicas }}
+  metrics:
+    {{- toYaml .Values.horizontalPodAutoscaler.metrics | nindent 4 }}
+  behavior:
+    {{- toYaml .Values.horizontalPodAutoscaler.behavior | nindent 4 }}
+{{- end }}

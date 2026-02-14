@@ -1,0 +1,157 @@
+{{- if .Values.istio.enabled }}
+{{- $fullName := include "service.fullname" . -}}
+{{- $mainPort := .Values.istio.ingress.routes.mainPort | default 80 -}}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  hosts:
+    - {{ $fullName }}.{{ $.Release.Namespace }}.svc.cluster.local  # From within the cluster
+    {{- $hasriloLocal := false }}
+    {{- range .Values.istio.ingress.routes.match }}
+      {{- if contains "rilo.local" .host }}
+        {{- $hasriloLocal = true }}
+      {{- end }}
+    {{- end }}
+    {{- if $hasriloLocal }}
+    - "*.rilo.local"
+    {{- end }}
+    {{- if .Values.istio.extraHosts }}
+      {{- range .Values.istio.extraHosts }}
+    - {{ . }}
+      {{- end }}
+    {{- end }}
+  gateways:
+    - mesh
+    - istio-system/service-gateway
+  http:
+    {{- range $index, $config := .Values.istio.ingress.routes.extraRoutes | default list }}
+    - name: {{ $config.name }}
+      match:
+        - authority:
+            exact: {{ $config.host }}
+          uri:
+            {{- if $config.regex }}
+            regex: {{ tpl $config.regex $ | quote }}
+            {{- else }}
+            prefix: {{ tpl $config.prefix $ }}
+            {{- end }}
+
+          {{- if $config.matchHeaders }}
+          headers:
+            {{- toYaml $config.matchHeaders | nindent 12 }}
+          {{- end }}
+          {{- if $config.matchQueryParams }}
+          queryParams:
+            {{- toYaml $config.matchQueryParams | nindent 12 }}
+          {{- end }}
+      {{- if $config.rewriteUri }}
+      rewrite:
+        uri: {{ $config.rewriteUri }}
+      {{- end }}
+      {{- if $config.uriRegexRewrite }}
+      rewrite:
+        uriRegexRewrite:
+          match: {{ $config.uriRegexRewrite.match | quote }}
+          rewrite: {{ $config.uriRegexRewrite.rewrite | quote }}
+      {{- end }}
+      {{- if $config.headers }}
+      headers:
+        {{- toYaml $config.headers | nindent 8 }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ $config.destinationServiceHost | default $fullName }}
+            port:
+              number: {{ $config.destinationServicePort | default $mainPort }}
+          weight: 100
+    {{- end }}
+
+{{- if .Values.argoRollouts.experiment.enabled }}
+    - name: experiment
+      match:
+        - gateways:
+            - mesh
+          authority:
+            exact: {{ $fullName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ $mainPort }}
+          headers:
+            type:
+              exact: experiment
+        - gateways:
+            - mesh
+          authority:
+            exact: {{ $fullName }}.{{ $.Release.Namespace }}.svc.cluster.local
+          headers:
+            type:
+              exact: experiment
+        {{- range $index, $config := .Values.istio.ingress.routes.match }}
+        - authority:
+            exact: {{ $config.host }}
+          uri:
+            prefix: {{ (tpl $config.prefix $) | default "/" }}
+          headers:
+            type:
+              exact: experiment
+        {{- end }}
+      route:
+        - destination:
+            host: {{ $fullName }}-experiment
+            port:
+              number: {{ $mainPort }}
+          weight: 100
+{{- end }}
+
+    - name: primary
+      {{- if .Values.istio.timeout }}
+      timeout: {{ .Values.istio.timeout }}
+      {{- end }}
+      {{- if .Values.istio.retries }}
+      retries:
+        {{- toYaml .Values.istio.retries | nindent 8 }}
+      {{- end }}
+      {{- if .Values.istio.fault }}
+      fault:
+        {{- toYaml .Values.istio.fault | nindent 8 }}
+      {{- end }}
+      {{- if .Values.istio.headers }}
+      headers:
+        {{- toYaml .Values.istio.headers | nindent 8 }}
+      {{- end }}
+      {{- if .Values.istio.mirror }}
+      mirror:
+        {{- toYaml .Values.istio.mirror | nindent 8 }}
+      {{- end }}
+      {{- if .Values.istio.mirrorPercentage }}
+      mirrorPercentage:
+        {{- toYaml .Values.istio.mirrorPercentage | nindent 8 }}
+      {{- end }}
+      match:
+        - gateways:
+            - mesh
+          authority:
+            exact: {{ $fullName }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ $mainPort }}
+        - gateways:
+            - mesh
+          authority:
+            exact: {{ $fullName }}.{{ $.Release.Namespace }}.svc.cluster.local
+        {{- range $index, $config := .Values.istio.ingress.routes.match }}
+        - authority:
+            exact: {{ $config.host }}
+          uri:
+            prefix: {{ (tpl $config.prefix $) | default "/" }}
+        {{- end }}
+      route:
+        - destination:
+            host: {{ $fullName }}
+            port:
+              number: {{ $mainPort }}
+          weight: 100
+        - destination:
+            host: {{ $fullName }}-preview
+            port:
+              number: {{ $mainPort }}
+          weight: 0
+{{- end }}

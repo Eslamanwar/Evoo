@@ -1,0 +1,24 @@
+{{- if .Values.verticalPodAutoscaler.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+  {{- if .Values.verticalPodAutoscaler.goldilocks.enabled }}
+    creator: Fairwinds
+    source: goldilocks
+  {{- end }}
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  targetRef:
+{{- if .Values.argoRollouts.enabled }}
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+{{- else }}
+    apiVersion: apps/v1
+    kind: Deployment
+{{- end }}
+    name: {{ include "service.fullname" . }}
+  updatePolicy:
+    updateMode: "Off"
+{{- end }}
