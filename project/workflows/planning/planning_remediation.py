@@ -73,7 +73,7 @@ class PlanningRemediationWorkflow(StateWorkflow):
                 "incident_type": incident.incident_type.value,
                 "run_index": run_index,
                 "force_explore": False,
-                "severity": incident.severity,
+                "severity": incident.severity.value,
                 "description": incident.description,
                 "metrics": state_machine_data.metrics_before.model_dump(mode="json") if state_machine_data.metrics_before else {},
                 "memory_context": memory_context,

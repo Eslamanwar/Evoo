@@ -8,15 +8,15 @@ global:
   temporalAddress: "temporal-frontend.temporal.svc.cluster.local:7233"
   temporalNamespace: "default"
   agentexBaseUrl: "http://agentex.agentex.svc.cluster.local"
-  agentName: "red-cell"
-  agentDescription: "Red-Cell AI Pentester Agent for autonomous security testing"
-  workflowTaskQueue: "red-cell-queue"
-  workflowName: "RedCellWorkflow"
+  agentName: "evoo"
+  agentDescription: "EVOO — Evolutionary Operations Optimizer: Autonomous SRE agent with reward-based learning"
+  workflowTaskQueue: "evoo-queue"
+  workflowName: "EVOOWorkflow"
   # Image configuration - inherited from parent chart
   image:
-    repository: 457710302499.dkr.ecr.eu-west-2.amazonaws.com/sre/red-cell
+    repository: eslamanwar/rilo
     pullPolicy: IfNotPresent
-    tag: "latest"
+    tag: "agents-evoo-v0.1"
 
 nameOverride: ""
 fullnameOverride: ""
@@ -51,6 +51,15 @@ env_vars:
   SERVICE_TYPE: "worker"
   AWS_REGION: "eu-west-2"
   AUTH_PRINCIPAL_B64: "eyJ1c2VyX2lkIjoiY2x1c3Rlci11c2VyLWlkIiwiYWNjb3VudF9pZCI6ImNsdXN0ZXItYWNjb3VudC1pZCJ9"
+  # OpenRouter LLM Configuration
+  OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
+  OPENAI_MODEL: "deepseek/deepseek-r1-0528"
+  # EVOO-specific Configuration
+  MAX_LEARNING_RUNS: "50"
+  EXPLORATION_RATE: "0.2"
+  MEMORY_FILE_PATH: "/tmp/evoo_data/evoo_memory.json"
+  STRATEGY_FILE_PATH: "/tmp/evoo_data/evoo_strategies.json"
+  INCIDENT_INTERVAL_SECONDS: "5"
 
 # Environment variables from secrets
 envFromSecrets: []

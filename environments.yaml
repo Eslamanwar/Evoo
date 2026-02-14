@@ -1,0 +1,27 @@
+# EVOO Agent Environment Configuration
+schema_version: "v1"
+environments:
+  qa:
+    auth:
+      principal:
+        user_id: "cluster-user-id"
+        account_id: "cluster-account-id"
+    helm_overrides:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "250Mi"
+        limits:
+          cpu: "500m"
+          memory: "500Mi"
+      temporal-worker:
+        enabled: true
+        replicaCount: 2
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "250Mi"
+          limits:
+            cpu: "500m"
+            memory: "500Mi"

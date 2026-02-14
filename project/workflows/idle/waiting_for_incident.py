@@ -92,7 +92,7 @@ class WaitingForIncidentWorkflow(StateWorkflow):
                 content=TextContent(
                     author="agent",
                     content=(
-                        f"### Incident Detected: `{incident.incident_type.value}` [{incident.severity.upper()}]\n"
+                        f"### Incident Detected: `{incident.incident_type.value}` [{incident.severity.value.upper()}]\n"
                         f"> {incident.description}\n\n"
                         f"| Metric | Value |\n"
                         f"|--------|-------|\n"
@@ -108,7 +108,7 @@ class WaitingForIncidentWorkflow(StateWorkflow):
 
         logger.info(
             f"[Run {run_index + 1}] Incident: {incident.incident_type.value} "
-            f"severity={incident.severity}"
+            f"severity={incident.severity.value}"
         )
 
         return EVOOState.PLANNING_REMEDIATION

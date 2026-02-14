@@ -198,7 +198,7 @@ async def run_single_cycle(run_index: int, explore_rate: float, openai_key: str)
     return {
         "run_index": run_index,
         "incident_type": itype,
-        "severity": incident.severity,
+        "severity": incident.severity.value if hasattr(incident.severity, 'value') else incident.severity,
         "strategy": strategy,
         "is_explore": is_explore,
         "tools": tools_to_call,

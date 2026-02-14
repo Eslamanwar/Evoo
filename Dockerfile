@@ -1,32 +1,55 @@
+# syntax=docker/dockerfile:1.3
 FROM python:3.12-slim
-
-WORKDIR /app
+COPY --from=ghcr.io/astral-sh/uv:0.6.4 /uv /uvx /bin/
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    htop \
+    vim \
     curl \
-    git \
+    tar \
+    python3-dev \
+    build-essential \
+    gcc \
+    cmake \
+    netcat-openbsd \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN python -m pip install --upgrade pip
+# Install tctl (Temporal CLI)
+RUN curl -L https://github.com/temporalio/tctl/releases/download/v1.18.1/tctl_1.18.1_linux_arm64.tar.gz -o /tmp/tctl.tar.gz && \
+    tar -xzf /tmp/tctl.tar.gz -C /usr/local/bin && \
+    chmod +x /usr/local/bin/tctl && \
+    rm /tmp/tctl.tar.gz
 
-# Copy project files
-COPY pyproject.toml ./
-COPY project ./project
+RUN uv pip install --system --upgrade pip setuptools wheel
 
-# Install Python dependencies (agentex-sdk comes from PyPI)
-RUN pip install --no-cache-dir -e .
+ENV UV_HTTP_TIMEOUT=1000
+
+# Copy pyproject.toml and README.md
+COPY pyproject.toml /app/evoo/pyproject.toml
+COPY README.md /app/evoo/README.md
+
+WORKDIR /app/evoo
+
+# Copy the project code
+COPY project /app/evoo/project
+
+# Install dependencies
+RUN uv pip install --system --no-cache agentex-sdk temporalio litellm python-dotenv termcolor pydantic httpx uvicorn
+
+WORKDIR /app/evoo
+
+ENV PYTHONPATH=/app/evoo
+
+# Set agent environment variables
+ENV AGENT_NAME=evoo-agent
 
 # Create memory storage directory
-RUN mkdir -p /tmp/evoo_data
+RUN mkdir -p /tmp/evoo_memory
 
-# Environment defaults
-ENV PYTHONUNBUFFERED=1
-ENV MEMORY_FILE_PATH=/tmp/evoo_data/evoo_memory.json
-ENV STRATEGY_FILE_PATH=/tmp/evoo_data/evoo_strategies.json
-ENV MAX_LEARNING_RUNS=50
-ENV EXPLORATION_RATE=0.2
+# Run the ACP server using uvicorn
+CMD ["uvicorn", "project.acp:acp", "--host", "0.0.0.0", "--port", "8000"]
 
-# Start the Temporal worker
-CMD ["python", "-m", "project.run_worker"]
+# When deploying the worker, replace CMD with:
+# CMD ["python", "-m", "project.run_worker"]

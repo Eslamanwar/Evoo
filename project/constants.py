@@ -1,44 +1,30 @@
-"""Constants and configuration for the EVOO agent."""
-from __future__ import annotations
-
+"""Constants for EVOO - Evolutionary Operations Optimizer Agent."""
 import os
 
-# Agent identity
-AGENT_NAME = os.getenv("AGENT_NAME", "evoo")
-WORKFLOW_NAME = os.getenv("WORKFLOW_NAME", "EVOOWorkflow")
-TASK_QUEUE = os.getenv("WORKFLOW_TASK_QUEUE", "evoo-queue")
 
-# LLM configuration
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+# LLM Configuration - matches other agents pattern (red-cell, aws-hero, dr-nova-science)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "deepseek/deepseek-r1-0528")
 
-# Learning loop configuration
-MAX_LEARNING_RUNS = int(os.getenv("MAX_LEARNING_RUNS", "50"))
-EXPLORATION_RATE = float(os.getenv("EXPLORATION_RATE", "0.2"))   # epsilon-greedy
-LEARNING_RUNS_BEFORE_OPTIMIZE = int(os.getenv("LEARNING_RUNS_BEFORE_OPTIMIZE", "3"))
 
-# Memory storage
-MEMORY_FILE_PATH = os.getenv("MEMORY_FILE_PATH", "/tmp/evoo_memory.json")
-STRATEGY_FILE_PATH = os.getenv("STRATEGY_FILE_PATH", "/tmp/evoo_strategies.json")
+# Memory Configuration
+EVOO_MEMORY_PATH = os.getenv("EVOO_MEMORY_PATH", "/tmp/evoo_memory")
 
-# Simulation settings
-INCIDENT_INTERVAL_SECONDS = int(os.getenv("INCIDENT_INTERVAL_SECONDS", "5"))
-MAX_INSTANCES = int(os.getenv("MAX_INSTANCES", "10"))
-MIN_INSTANCES = int(os.getenv("MIN_INSTANCES", "1"))
+# Learning Loop Configuration
+EVOO_MAX_INCIDENTS = int(os.getenv("EVOO_MAX_INCIDENTS", "10"))
+EVOO_EXPLORATION_RATE = float(os.getenv("EVOO_EXPLORATION_RATE", "0.3"))
+EVOO_EXPLORATION_DECAY = float(os.getenv("EVOO_EXPLORATION_DECAY", "0.95"))
+EVOO_MIN_EXPLORATION_RATE = float(os.getenv("EVOO_MIN_EXPLORATION_RATE", "0.05"))
 
-# LLM agent loop configuration
-MAX_AGENT_LOOP_ITERATIONS = int(os.getenv("MAX_AGENT_LOOP_ITERATIONS", "8"))
-LLM_TEMPERATURE_PLANNING = float(os.getenv("LLM_TEMPERATURE_PLANNING", "0.3"))
-LLM_TEMPERATURE_EXECUTION = float(os.getenv("LLM_TEMPERATURE_EXECUTION", "0.2"))
-LLM_MAX_TOKENS_PLANNING = int(os.getenv("LLM_MAX_TOKENS_PLANNING", "800"))
-LLM_MAX_TOKENS_EXECUTION = int(os.getenv("LLM_MAX_TOKENS_EXECUTION", "500"))
-LLM_TIMEOUT_SECONDS = float(os.getenv("LLM_TIMEOUT_SECONDS", "60.0"))
-LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))
+# Max iterations for agentic loops
+MAX_AGENT_ITERATIONS = 15
 
-# Reward weights
-REWARD_SERVICE_RESTORED = 100.0
-REWARD_RECOVERY_TIME_PENALTY = 0.5
-REWARD_INFRASTRUCTURE_COST_PENALTY = 0.2
-REWARD_ERROR_RATE_PENALTY = 50.0
-REWARD_LATENCY_IMPROVEMENT_BONUS = 0.1
-REWARD_UNNECESSARY_SCALE_PENALTY = 10.0
+# Activity timeouts (seconds)
+TIMEOUTS = {
+    "llm_call": 120,
+    "remediation_action": 60,
+    "metrics_query": 30,
+    "simulation": 30,
+    "activity_default": 60,
+}

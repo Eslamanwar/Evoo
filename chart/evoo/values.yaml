@@ -45,7 +45,7 @@ service:
     - name: OPENAI_BASE_URL
       value: "https://openrouter.ai/api/v1"
     - name: OPENAI_MODEL
-      value: "meta-llama/llama-3.3-70b-instruct"
+      value: "deepseek/deepseek-r1-0528"
     - name: AWS_REGION
       value: "eu-west-2"
     - name: OPENAI_API_KEY
@@ -206,7 +206,7 @@ temporal-worker:
     ENVIRONMENT: qa
     # OpenAI Configuration
     OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
-    OPENAI_MODEL: "deepseek/deepseek-v3.2-exp"
+    OPENAI_MODEL: "deepseek/deepseek-r1-0528"
     OPENAI_API_KEY: "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"
     AGENT_API_KEY: bb2b
     # EVOO-specific Configuration
@@ -215,6 +215,22 @@ temporal-worker:
     MEMORY_FILE_PATH: "/tmp/evoo_data/evoo_memory.json"
     STRATEGY_FILE_PATH: "/tmp/evoo_data/evoo_strategies.json"
     INCIDENT_INTERVAL_SECONDS: "5"
+    # Guardrail Configuration
+    EVOO_GUARDRAILS_ENABLED: "true"
+    EVOO_MIN_INSTANCES_FOR_RESTART: "2"
+    EVOO_MIN_INSTANCES_FOR_ROLLBACK: "2"
+    EVOO_MAX_HORIZONTAL_INSTANCES: "10"
+    EVOO_MIN_HORIZONTAL_INSTANCES: "1"
+    EVOO_MAX_VERTICAL_CPU: "8.0"
+    EVOO_MAX_VERTICAL_MEMORY: "16.0"
+    EVOO_MIN_TIMEOUT_MS: "500"
+    EVOO_MAX_TIMEOUT_MS: "60000"
+    EVOO_MAX_COST_PER_INCIDENT: "50.0"
+    EVOO_MAX_RESTARTS_PER_INCIDENT: "3"
+    EVOO_MAX_ROLLBACKS_PER_INCIDENT: "1"
+    EVOO_MAX_ACTIONS_PER_INCIDENT: "10"
+    EVOO_BLOCK_IF_HEALTHY: "true"
+    EVOO_HEALTHY_THRESHOLD: "0.85"
 
   resources:
     limits:

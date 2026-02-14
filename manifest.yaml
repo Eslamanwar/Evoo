@@ -1,61 +1,82 @@
+# EVOO Agent Manifest Configuration
+# ----------------------------------
+# Evolutionary Operations Optimizer - Autonomous SRE Agent
+
+# Build Configuration
 build:
   context:
     root: ../../../
     include_paths:
       - agents/evoo
     dockerfile: agents/evoo/Dockerfile
+    dockerignore: agents/evoo/.dockerignore
 
+# Local Development Configuration
 local_development:
   agent:
-    port: 8006
+    port: 443
+    host_address: host.docker.internal
+
   paths:
     acp: project/acp.py
     worker: project/run_worker.py
 
+# Agent Configuration
 agent:
   acp_type: async
-  name: evoo
-  display_name: "EVOO — Evolutionary Operations Optimizer"
-  description: >
-    An autonomous AI SRE agent that continuously improves its incident remediation
-    strategy through reward-based learning. Detects production incidents, selects
-    remediation strategies, executes tool sequences, measures outcomes with a reward
-    function (+ LLM judge), stores experiences in memory, and improves over time.
-  version: "1.0.0"
-  icon: "🔬"
-  tags:
-    - sre
-    - autonomous
-    - learning
-    - incident-response
-    - ml-ops
+  name: evoo-agent
+  description: "EVOO - Evolutionary Operations Optimizer: An autonomous SRE agent that learns to remediate production incidents through experience and continuous improvement"
 
   temporal:
     enabled: true
     workflows:
-      - name: EVOOWorkflow
+      - name: EvooWorkflow
         queue_name: evoo-queue
 
   env:
-    AGENT_NAME: evoo
-    WORKFLOW_TASK_QUEUE: evoo-queue
-    WORKFLOW_NAME: EVOOWorkflow
-    MAX_LEARNING_RUNS: "50"
-    EXPLORATION_RATE: "0.2"
-    MEMORY_FILE_PATH: /tmp/evoo_data/evoo_memory.json
-    STRATEGY_FILE_PATH: /tmp/evoo_data/evoo_strategies.json
-    INCIDENT_INTERVAL_SECONDS: "5"
+    ENVIRONMENT: qa
+    UVICORN_PORT: "443"
+    DATABASE_URL: postgresql://localhost:5432
+    TEMPORAL_ADDRESS: localhost:7233
+    REDIS_URL: redis://localhost:6379
+    MONGODB_URI: mongodb://localhost:27017
+    MONGODB_DATABASE_NAME: agentex
+    WATCHFILES_FORCE_POLLING: "true"
+    ENABLE_HEALTH_CHECK_WORKFLOW: "true"
+    AGENTEX_SERVER_TASK_QUEUE: agentex-server-queue
+    AGENTEX_BASE_URL: "http://localhost:5003"
+    ACP_URL: "https://evoo-agent.loca.lt"
+    EVOO_MEMORY_PATH: "/tmp/evoo_memory"
+    EVOO_MAX_INCIDENTS: "10"
 
+  credentials:
+    - env_var_name: "OPENAI_API_KEY"
+      secret_name: "openai-secret"
+      secret_key: "api-key"
+    - env_var_name: "OPENAI_BASE_URL"
+      secret_name: "openrouter-secret"
+      secret_key: "base-url"
+    - env_var_name: "OPENAI_MODEL"
+      secret_name: "openrouter-secret"
+      secret_key: "model"
+
+# Deployment Configuration
 deployment:
   image:
     repository: "sre/agents"
     tag: "latest"
+
   global:
+    agent:
+      name: "evoo-agent"
+      description: "EVOO - Evolutionary Operations Optimizer"
+
     replicaCount: 1
+
     resources:
       requests:
-        cpu: "250m"
-        memory: "512Mi"
+        cpu: "500m"
+        memory: "1Gi"
       limits:
         cpu: "1000m"
-        memory: "1Gi"
+        memory: "2Gi"

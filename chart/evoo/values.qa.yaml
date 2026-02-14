@@ -75,31 +75,46 @@ service:
 
   environment:
     - name: ACP_URL
-      value: "http://agents-red-cell.agentex.svc.cluster.local"
+      value: "http://agents-evoo.agentex.svc.cluster.local"
     - name: TEMPORAL_ADDRESS
       value: "agentex-temporal-frontend.agentex.svc.cluster.local:7233"
     - name: TEMPORAL_NAMESPACE
       value: "default"
     - name: TEMPORAL_TASK_QUEUE
-      value: "red-cell-queue"
+      value: "evoo-queue"
     - name: WORKFLOW_TASK_QUEUE
-      value: "red-cell-queue"
+      value: "evoo-queue"
     - name: WORKFLOW_NAME
-      value: "RedCellWorkflow"
+      value: "EVOOWorkflow"
     - name: AGENT_NAME
-      value: "red-cell"
+      value: "evoo"
+    - name: OPENAI_BASE_URL
+      value: "https://openrouter.ai/api/v1"
+    - name: OPENAI_MODEL
+      value: "deepseek/deepseek-r1-0528"
     - name: AGENTEX_BASE_URL
       valueFrom:
         secretKeyRef:
-          name: agents-red-cell
+          name: agents-evoo
           key: AGENTEX_BASE_URL
+    - name: OPENAI_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: agents-evoo
+          key: OPENAI_API_KEY
     - name: AGENT_API_KEY
       valueFrom:
         secretKeyRef:
-          name: agents-red-cell
+          name: agents-evoo
           key: AGENT_API_KEY
-    - name: ALLOWED_EMAILS
-      value: "eslam.anwar96@gmail.com"
+    - name: MAX_LEARNING_RUNS
+      value: "50"
+    - name: EXPLORATION_RATE
+      value: "0.2"
+    - name: MEMORY_FILE_PATH
+      value: "/tmp/evoo_data/evoo_memory.json"
+    - name: STRATEGY_FILE_PATH
+      value: "/tmp/evoo_data/evoo_strategies.json"
 
   externalSecret:
     enabled: false
@@ -114,7 +129,7 @@ service:
       routes:
         mainPort: 80
         match:
-          - host: red-cell.dhhmena.com
+          - host: evoo.dhhmena.com
             prefix: "/"
     holdApplicationUntilProxyStarts: true
     resources:
@@ -133,7 +148,21 @@ service:
 
 # Temporal Worker configuration for QA
 temporal-worker:
-  # Security context for nmap scanning - privileged mode required for full scanning capabilities
   securityContext:
-    privileged: true
+    privileged: false
+  env_vars:
+    SERVICE_TYPE: "worker"
+    AWS_REGION: "eu-west-2"
+    DATABASE_URL: postgresql://postgres:postgres@agentex-postgresql:5432/agentex
+    REDIS_URL: redis://agentex-redis-master:6379
+    TEMPORAL_HOST: agentex-temporal-frontend
+    AGENTEX_SERVER_TASK_QUEUE: agentex-server
+    ENVIRONMENT: qa
+    OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
+    OPENAI_MODEL: "deepseek/deepseek-r1-0528"
+    MAX_LEARNING_RUNS: "50"
+    EXPLORATION_RATE: "0.2"
+    MEMORY_FILE_PATH: "/tmp/evoo_data/evoo_memory.json"
+    STRATEGY_FILE_PATH: "/tmp/evoo_data/evoo_strategies.json"
+    INCIDENT_INTERVAL_SECONDS: "5"
 

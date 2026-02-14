@@ -1,131 +1,122 @@
-"""EVOO: Terminal state workflows (completed, failed)."""
-from __future__ import annotations
+"""Terminal state workflows for COMPLETED and FAILED states."""
 
-from datetime import timedelta
 from typing import Optional, override
 
-from temporalio.common import RetryPolicy
-
 from agentex.lib import adk
-from agentex.lib.core.temporal.activities.activity_helpers import ActivityHelpers
-from agentex.lib.sdk.state_machine import StateMachine
+from agentex.lib.sdk.state_machine.state_machine import StateMachine
 from agentex.lib.sdk.state_machine.state_workflow import StateWorkflow
 from agentex.lib.utils.logging import make_logger
 from agentex.types.text_content import TextContent
 
-from project.state_machines.evoo_agent import EVOOData, EVOOState
+from project.models.enums import EvooState
+from project.state_machines.evoo import EvooData
 
 logger = make_logger(__name__)
 
 
 class CompletedWorkflow(StateWorkflow):
-    """EVOO learning run completed successfully."""
+    """Workflow for the COMPLETED terminal state."""
 
     @override
     async def execute(
         self,
         state_machine: StateMachine,
-        state_machine_data: Optional[EVOOData] = None,
+        state_machine_data: Optional[EvooData] = None,
     ) -> str:
-        if state_machine_data is None:
-            return EVOOState.COMPLETED
+        """Handle completed state - terminal.
 
-        logger.info("EVOO learning loop completed successfully!")
+        Args:
+            state_machine: The state machine instance.
+            state_machine_data: Current state data.
 
-        # Fetch final memory summary
-        try:
-            summary = await ActivityHelpers.execute_activity(
-                activity_name="get_memory_summary_activity",
-                request={},
-                response_type=dict,
-                start_to_close_timeout=timedelta(seconds=30),
-                retry_policy=RetryPolicy(maximum_attempts=2),
+        Returns:
+            Stays in COMPLETED state.
+        """
+        if state_machine_data:
+            metrics = state_machine_data.agent_metrics
+            logger.info(
+                f"EVOO learning loop completed. "
+                f"Total incidents: {state_machine_data.incident_count}, "
+                f"Avg reward: {metrics.get('average_reward', 0):.2f}"
             )
-        except Exception:
-            summary = {}
 
-        rankings_result = {}
-        try:
-            rankings_result = await ActivityHelpers.execute_activity(
-                activity_name="get_strategy_rankings_activity",
-                request={},
-                response_type=dict,
-                start_to_close_timeout=timedelta(seconds=30),
-                retry_policy=RetryPolicy(maximum_attempts=2),
-            )
-        except Exception:
-            pass
+            if state_machine_data.task_id:
+                reward_history = metrics.get("reward_history", [])
+                total = metrics.get("total_incidents", 0)
+                success = metrics.get("total_successful_remediations", 0)
 
-        if state_machine_data.task_id:
-            rewards = state_machine_data.reward_history
-            recovery_times = state_machine_data.recovery_time_history
+                # Determine evolution verdict
+                verdict_emoji = "🧬"
+                if len(reward_history) >= 4:
+                    half = len(reward_history) // 2
+                    early = sum(reward_history[:half]) / half
+                    late = sum(reward_history[half:]) / (len(reward_history) - half)
+                    if late > early + 10:
+                        verdict_emoji = "🚀"
+                        verdict = "EVOO has evolved — performance improved significantly!"
+                    elif late > early:
+                        verdict_emoji = "📈"
+                        verdict = "EVOO is learning — gradual improvement detected."
+                    else:
+                        verdict_emoji = "🔬"
+                        verdict = "EVOO needs more training cycles to demonstrate evolution."
+                else:
+                    verdict = "Completed with limited data for evolution assessment."
 
-            avg_all = sum(rewards) / len(rewards) if rewards else 0
-            avg_early = sum(rewards[:5]) / min(5, len(rewards)) if rewards else 0
-            avg_late = sum(rewards[-5:]) / min(5, len(rewards)) if rewards else 0
-            improvement = avg_late - avg_early
-
-            rankings = rankings_result.get("rankings", {})
-            rankings_section = ""
-            for itype, records in list(rankings.items())[:6]:
-                top = records[:3]
-                rankings_section += f"\n**{itype}**: " + " > ".join(
-                    [f"`{r['strategy']}`({r['avg_reward']:.1f})" for r in top]
+                await adk.messages.create(
+                    task_id=state_machine_data.task_id,
+                    content=TextContent(
+                        author="agent",
+                        content=(
+                            f"### {verdict_emoji} EVOO Session Complete\n\n"
+                            f"**{verdict}**\n\n"
+                            f"- Incidents handled: **{total}**\n"
+                            f"- Success rate: **{success}/{total}** ({success/total:.0%})\n"
+                            f"- Final avg reward: **{metrics.get('average_reward', 0):.2f}**\n"
+                            f"- Final avg recovery: **{metrics.get('average_recovery_time', 0):.1f}s**\n\n"
+                            f"*EVOO's learned strategies are persisted in memory and will be used in future sessions.*"
+                        ),
+                    ),
+                    trace_id=state_machine_data.task_id,
                 )
 
-            await adk.messages.create(
-                task_id=state_machine_data.task_id,
-                content=TextContent(
-                    author="agent",
-                    content=(
-                        f"\n# EVOO Learning Complete — Final Report\n\n"
-                        f"## Performance Summary\n"
-                        f"| Metric | Value |\n"
-                        f"|--------|-------|\n"
-                        f"| Total Runs | {state_machine_data.run_index} |\n"
-                        f"| Total Experiences | {summary.get('total_experiences', 0)} |\n"
-                        f"| Average Reward | {summary.get('average_reward', avg_all):.2f} |\n"
-                        f"| Best Reward | {summary.get('best_reward', max(rewards) if rewards else 0):.2f} |\n"
-                        f"| Avg Recovery Time | {summary.get('average_recovery_time', 0):.1f}s |\n"
-                        f"| Best Recovery Time | {summary.get('best_recovery_time', 0):.1f}s |\n\n"
-                        f"## Learning Improvement\n"
-                        f"- Early avg reward (first 5 runs): **{avg_early:.2f}**\n"
-                        f"- Recent avg reward (last 5 runs): **{avg_late:.2f}**\n"
-                        f"- Net improvement: **{improvement:+.2f}** "
-                        f"({'✅ IMPROVED' if improvement > 0 else '⚠️ NEEDS MORE TRAINING'})\n\n"
-                        f"## Optimal Strategies Learned{rankings_section}\n\n"
-                        f"*EVOO has completed its evolutionary learning cycle.*"
-                    ),
-                ),
-                trace_id=state_machine_data.task_id,
-            )
-
-        return EVOOState.COMPLETED
+        return EvooState.COMPLETED
 
 
 class FailedWorkflow(StateWorkflow):
-    """EVOO encountered a fatal error."""
+    """Workflow for the FAILED terminal state."""
 
     @override
     async def execute(
         self,
         state_machine: StateMachine,
-        state_machine_data: Optional[EVOOData] = None,
+        state_machine_data: Optional[EvooData] = None,
     ) -> str:
-        error_msg = "Unknown error"
+        """Handle failed state - terminal.
+
+        Args:
+            state_machine: The state machine instance.
+            state_machine_data: Current state data.
+
+        Returns:
+            Stays in FAILED state.
+        """
         if state_machine_data:
-            error_msg = state_machine_data.error_message or "Unspecified failure"
+            logger.error(f"EVOO workflow failed: {state_machine_data.error_message}")
 
-        logger.error(f"EVOO failed: {error_msg}")
+            if state_machine_data.task_id:
+                await adk.messages.create(
+                    task_id=state_machine_data.task_id,
+                    content=TextContent(
+                        author="agent",
+                        content=(
+                            f"### ❌ EVOO Workflow Failed\n\n"
+                            f"**Error:** {state_machine_data.error_message}\n\n"
+                            f"Incidents completed before failure: {state_machine_data.incident_count}\n"
+                            f"*Any learned strategies have been saved and will persist for future sessions.*"
+                        ),
+                    ),
+                    trace_id=state_machine_data.task_id,
+                )
 
-        if state_machine_data and state_machine_data.task_id:
-            await adk.messages.create(
-                task_id=state_machine_data.task_id,
-                content=TextContent(
-                    author="agent",
-                    content=f"## EVOO Error\n\nThe learning loop encountered a fatal error:\n```\n{error_msg}\n```",
-                ),
-                trace_id=state_machine_data.task_id,
-            )
-
-        return EVOOState.FAILED
+        return EvooState.FAILED

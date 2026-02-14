@@ -53,7 +53,7 @@ class ExecutingRemediationWorkflow(StateWorkflow):
                 "incident": {
                     "incident_type": incident.incident_type.value if incident else "unknown",
                     "affected_service": incident.affected_service if incident else "api-service",
-                    "severity": incident.severity if incident else "unknown",
+                    "severity": incident.severity.value if incident else "unknown",
                     "description": incident.description if incident else "",
                 },
                 "plan": {
@@ -67,8 +67,8 @@ class ExecutingRemediationWorkflow(StateWorkflow):
                 "trace_id": task_id,
             },
             response_type=dict,
-            start_to_close_timeout=timedelta(minutes=5),
-            heartbeat_timeout=timedelta(seconds=120),
+            start_to_close_timeout=timedelta(minutes=15),
+            heartbeat_timeout=timedelta(seconds=300),
             retry_policy=RetryPolicy(maximum_attempts=1),
         )
 

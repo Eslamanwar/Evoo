@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ class IncidentType(str, Enum):
     TIMEOUT_MISCONFIGURATION = "timeout_misconfiguration"
 
     @classmethod
-    def all_types(cls) -> List["IncidentType"]:
+    def all_types(cls) -> List[IncidentType]:
         """Return all incident types."""
         return list(cls)
 
@@ -70,12 +70,12 @@ class RemediationStrategy(str, Enum):
     COMBINED_ROLLBACK_SCALE = "combined_rollback_scale"
 
     @classmethod
-    def all_strategies(cls) -> List["RemediationStrategy"]:
+    def all_strategies(cls) -> List[RemediationStrategy]:
         """Return all available strategies."""
         return list(cls)
 
     @classmethod
-    def single_action_strategies(cls) -> List["RemediationStrategy"]:
+    def single_action_strategies(cls) -> List[RemediationStrategy]:
         """Return strategies that involve a single action."""
         return [
             cls.RESTART_SERVICE,
@@ -88,7 +88,7 @@ class RemediationStrategy(str, Enum):
         ]
 
     @classmethod
-    def combined_strategies(cls) -> List["RemediationStrategy"]:
+    def combined_strategies(cls) -> List[RemediationStrategy]:
         """Return strategies that combine multiple actions."""
         return [
             cls.COMBINED_RESTART_SCALE,
@@ -183,7 +183,7 @@ class SystemMetrics(BaseModel):
 
         return round(sum(scores) / len(scores), 3)
 
-    def improvement_from(self, before: "SystemMetrics") -> Dict[str, float]:
+    def improvement_from(self, before: SystemMetrics) -> Dict[str, float]:
         """Calculate improvement metrics compared to a previous state."""
         return {
             "latency_improvement": before.latency_ms - self.latency_ms,
@@ -191,20 +191,6 @@ class SystemMetrics(BaseModel):
             "memory_improvement": before.memory_percent - self.memory_percent,
             "error_rate_improvement": before.error_rate - self.error_rate,
             "availability_improvement": self.availability - before.availability,
-        }
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "latency_ms": 2500.0,
-                "cpu_percent": 75.5,
-                "memory_percent": 68.2,
-                "error_rate": 0.15,
-                "availability": 0.85,
-                "recovery_time_seconds": 45.0,
-                "active_instances": 2,
-                "timeout_ms": 30000,
-            }
         }
 
 
@@ -223,7 +209,10 @@ class Incident(BaseModel):
         default=IncidentType.SERVICE_CRASH,
         description="Classification of the incident"
     )
-    severity: str = Field(default="medium", description="Severity: low, medium, high, critical")
+    severity: IncidentSeverity = Field(
+        default=IncidentSeverity.MEDIUM,
+        description="Incident severity level"
+    )
     affected_service: str = Field(default="api-service", description="Name of the affected service")
     metrics_at_detection: SystemMetrics = Field(
         default_factory=SystemMetrics,
@@ -237,7 +226,7 @@ class Incident(BaseModel):
         """Generate a brief summary of the incident."""
         metrics = self.metrics_at_detection
         return (
-            f"[{self.severity.upper()}] {self.incident_type.value}: "
+            f"[{self.severity.value.upper()}] {self.incident_type.value}: "
             f"latency={metrics.latency_ms:.0f}ms, "
             f"error_rate={metrics.error_rate:.1%}, "
             f"availability={metrics.availability:.1%}"
@@ -279,17 +268,6 @@ class Incident(BaseModel):
         }
         return suggestions.get(self.incident_type, [RemediationStrategy.RESTART_SERVICE])
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "inc-abc123",
-                "incident_type": "high_latency",
-                "severity": "high",
-                "affected_service": "api-service",
-                "description": "P99 latency spiked to 5420ms. CPU at 72.3%.",
-            }
-        }
-
 
 class IncidentProfile(BaseModel):
     """Profile defining characteristics of an incident type.
@@ -297,11 +275,11 @@ class IncidentProfile(BaseModel):
     Used by the simulator to generate realistic incidents.
     """
     incident_type: IncidentType
-    latency_range: tuple = Field(default=(100, 500))
-    cpu_range: tuple = Field(default=(20, 50))
-    memory_range: tuple = Field(default=(30, 60))
-    error_rate_range: tuple = Field(default=(0.0, 0.05))
-    availability_range: tuple = Field(default=(0.95, 1.0))
+    latency_range: Tuple[float, float] = Field(default=(100.0, 500.0))
+    cpu_range: Tuple[float, float] = Field(default=(20.0, 50.0))
+    memory_range: Tuple[float, float] = Field(default=(30.0, 60.0))
+    error_rate_range: Tuple[float, float] = Field(default=(0.0, 0.05))
+    availability_range: Tuple[float, float] = Field(default=(0.95, 1.0))
     severity_weights: Dict[str, float] = Field(default_factory=dict)
     description_template: str = ""
 
@@ -319,8 +297,8 @@ class RemediationEffect(BaseModel):
         le=1.0,
         description="How effective this strategy is for this incident (0.0-1.0)"
     )
-    recovery_time_range: tuple = Field(
-        default=(30, 90),
+    recovery_time_range: Tuple[float, float] = Field(
+        default=(30.0, 90.0),
         description="Expected recovery time range in seconds (min, max)"
     )
     side_effects: Dict[str, float] = Field(
