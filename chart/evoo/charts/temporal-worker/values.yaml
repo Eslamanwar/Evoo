@@ -53,7 +53,7 @@ env_vars:
   AUTH_PRINCIPAL_B64: "eyJ1c2VyX2lkIjoiY2x1c3Rlci11c2VyLWlkIiwiYWNjb3VudF9pZCI6ImNsdXN0ZXItYWNjb3VudC1pZCJ9"
   # OpenRouter LLM Configuration
   OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
-  OPENAI_MODEL: "deepseek/deepseek-r1-0528"
+  OPENAI_MODEL: "meta-llama/llama-4-maverick"
   # EVOO-specific Configuration
   MAX_LEARNING_RUNS: "50"
   EXPLORATION_RATE: "0.2"

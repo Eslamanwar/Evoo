@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict
 
+import httpx
 from temporalio import activity
 
 from agentex.lib.utils.logging import make_logger
@@ -54,15 +55,16 @@ async def calculate_reward_activity(params: Dict[str, Any]) -> Dict[str, Any]:
 
     latency_before = metrics_before.get("latency_ms", 0.0)
     latency_after = metrics_after.get("latency_ms", 0.0)
-    latency_improvement = max(0.0, latency_before - latency_after)
-    latency_bonus = latency_improvement * 0.1
+    # Cap improvement at 500ms to prevent latency bonus from dwarfing the service_restored signal
+    latency_improvement = min(max(0.0, latency_before - latency_after), 500.0)
+    latency_bonus = latency_improvement * 0.02  # max +10 (was uncapped, up to +500)
     reward += latency_bonus
     breakdown["latency_improvement_bonus"] = round(latency_bonus, 2)
 
     avail_before = metrics_before.get("availability", 0.5)
     avail_after = metrics_after.get("availability", 0.5)
     avail_improvement = max(0.0, avail_after - avail_before)
-    avail_bonus = avail_improvement * 30.0
+    avail_bonus = avail_improvement * 50.0  # max +50 when availability fully restored
     reward += avail_bonus
     breakdown["availability_improvement_bonus"] = round(avail_bonus, 2)
 
@@ -107,7 +109,7 @@ async def llm_evaluate_remediation_activity(params: Dict[str, Any]) -> Dict[str,
 
     try:
         from openai import AsyncOpenAI
-        client_kwargs = {"api_key": api_key}
+        client_kwargs = {"api_key": api_key, "timeout": httpx.Timeout(120.0)}
         if base_url:
             client_kwargs["base_url"] = base_url
         client = AsyncOpenAI(**client_kwargs)

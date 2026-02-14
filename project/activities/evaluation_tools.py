@@ -4,6 +4,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
+import httpx
 from openai import AsyncOpenAI
 from temporalio import activity
 
@@ -187,7 +188,13 @@ Respond in JSON format with keys: assessment, positives, improvements, recommend
         client = AsyncOpenAI(
             api_key=api_key,
             base_url=base_url,
+            timeout=httpx.Timeout(120.0),
         )
+
+        try:
+            activity.heartbeat("Calling LLM for evaluation...")
+        except Exception:
+            pass
 
         response = await client.chat.completions.create(
             model=model,

@@ -211,7 +211,7 @@ class DetectingIncidentWorkflow(StateWorkflow):
 
             log_analysis_json = await workflow.execute_activity(
                 "analyze_logs",
-                start_to_close_timeout=workflow.timedelta(seconds=30),
+                start_to_close_timeout=workflow.timedelta(minutes=5),
             )
             log_analysis = json.loads(log_analysis_json)
 
@@ -243,7 +243,7 @@ class DetectingIncidentWorkflow(StateWorkflow):
 
             prediction_json = await workflow.execute_activity(
                 "predict_incident_type",
-                start_to_close_timeout=workflow.timedelta(seconds=30),
+                start_to_close_timeout=workflow.timedelta(minutes=5),
             )
             prediction = json.loads(prediction_json)
 

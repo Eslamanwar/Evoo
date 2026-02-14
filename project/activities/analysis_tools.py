@@ -9,6 +9,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
+import httpx
 from openai import AsyncOpenAI
 from temporalio import activity
 
@@ -62,7 +63,13 @@ async def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 1000
     client = AsyncOpenAI(
         api_key=api_key,
         base_url=base_url,
+        timeout=httpx.Timeout(120.0),
     )
+
+    try:
+        activity.heartbeat("Calling LLM...")
+    except Exception:
+        pass
 
     response = await client.chat.completions.create(
         model=model,
@@ -73,6 +80,11 @@ async def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 1000
         max_tokens=max_tokens,
         temperature=0.3,
     )
+
+    try:
+        activity.heartbeat("LLM call completed")
+    except Exception:
+        pass
 
     return response.choices[0].message.content
 
