@@ -11,7 +11,7 @@
 Today, when a production system crashes at 3 AM, here's what happens:
 
 1. PagerDuty fires an alert
-2. A sleep-deprived engineer wakes up
+2. A sleep engineer wakes up
 3. They SSH into servers, read logs, guess what's wrong
 4. They try a fix. It doesn't work.
 5. They try another fix. Maybe it works.
