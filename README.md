@@ -1,6 +1,6 @@
 # 🫒 EVOO — Evolutionary Operations Optimizer
-Check report --> https://hub.rilo.dev/ui?agent_name=evoo&task_id=4e59c01e-d7f6-404e-b5fb-da09bd381961
-Try it yourself --> https://hub.rilo.dev/ui?agent_name=evoo
+- Check report --> https://hub.rilo.dev/ui?agent_name=evoo&task_id=4e59c01e-d7f6-404e-b5fb-da09bd381961
+- Try it yourself --> https://hub.rilo.dev/ui?agent_name=evoo
 
 
 > An autonomous AI agent that behaves like a **Site Reliability Engineer (SRE)** and continuously improves its incident remediation strategy over time using feedback, memory, and strategy optimization.
