@@ -79,8 +79,8 @@ class PlanningRemediationWorkflow(StateWorkflow):
                 "memory_context": memory_context,
             },
             response_type=dict,
-            start_to_close_timeout=timedelta(seconds=60),
-            retry_policy=RetryPolicy(maximum_attempts=2),
+            start_to_close_timeout=timedelta(minutes=5),
+            retry_policy=RetryPolicy(maximum_attempts=1),
         )
 
         strategy_name = strategy_selection["strategy"]

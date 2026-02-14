@@ -40,7 +40,7 @@ def set_experience_store(store: ExperienceStore) -> None:
     _experience_store = store
 
 
-async def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 1000) -> str:
+async def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 1000, json_mode: bool = False) -> str:
     """Call LLM via OpenAI SDK with OpenRouter.
 
     Follows the same pattern as red-cell agent for consistency.
@@ -71,15 +71,19 @@ async def _call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 1000
     except Exception:
         pass
 
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[
+    kwargs = {
+        "model": model,
+        "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        max_tokens=max_tokens,
-        temperature=0.3,
-    )
+        "max_tokens": max_tokens,
+        "temperature": 0.3,
+    }
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+
+    response = await client.chat.completions.create(**kwargs)
 
     try:
         activity.heartbeat("LLM call completed")
@@ -156,7 +160,7 @@ and what are the most likely root causes? Consider the relationships between met
 (e.g., high CPU + high latency might indicate different root causes than high memory + errors)."""
 
     try:
-        llm_response = await _call_llm(system_prompt, user_prompt, max_tokens=800)
+        llm_response = await _call_llm(system_prompt, user_prompt, max_tokens=800, json_mode=True)
 
         try:
             analysis = json.loads(llm_response)
@@ -268,7 +272,7 @@ Based on these metrics, what type of incident is most likely occurring?
 Consider which metrics are most anomalous and how they relate to each other."""
 
     try:
-        llm_response = await _call_llm(system_prompt, user_prompt, max_tokens=600)
+        llm_response = await _call_llm(system_prompt, user_prompt, max_tokens=600, json_mode=True)
 
         try:
             prediction_data = json.loads(llm_response)
@@ -384,7 +388,7 @@ Available strategies:
 
 Which strategy should we try first and why?"""
 
-            llm_response = await _call_llm(system_prompt, user_prompt, max_tokens=300)
+            llm_response = await _call_llm(system_prompt, user_prompt, max_tokens=300, json_mode=True)
 
             try:
                 recommendation = json.loads(llm_response)

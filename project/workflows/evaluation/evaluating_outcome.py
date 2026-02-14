@@ -90,7 +90,7 @@ class EvaluatingOutcomeWorkflow(StateWorkflow):
                 "task_id": task_id,
             },
             response_type=dict,
-            start_to_close_timeout=timedelta(seconds=60),
+            start_to_close_timeout=timedelta(minutes=5),
             retry_policy=RetryPolicy(maximum_attempts=1),
         )
 

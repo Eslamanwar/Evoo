@@ -101,7 +101,7 @@ class PlanningRemediationWorkflow(StateWorkflow):
             prev_strategy_json = await workflow.execute_activity(
                 "apply_previous_successful_strategy",
                 args=[incident_type],
-                start_to_close_timeout=workflow.timedelta(seconds=30),
+                start_to_close_timeout=workflow.timedelta(minutes=5),
             )
             prev_strategy = json.loads(prev_strategy_json)
 

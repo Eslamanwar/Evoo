@@ -182,9 +182,17 @@ class EvaluatingOutcomeWorkflow(StateWorkflow):
                     f"  - {key}: {value:+.2f}" for key, value in breakdown.items()
                 )
 
-                positives = llm_eval.get("positives", [])
-                improvements = llm_eval.get("improvements", [])
-                recommendations = llm_eval.get("recommendations", [])
+                def _to_list(val):
+                    """Coerce LLM field to list — handles string, list, or missing."""
+                    if isinstance(val, list):
+                        return val
+                    if isinstance(val, str) and val.strip():
+                        return [val]
+                    return []
+
+                positives = _to_list(llm_eval.get("positives", []))
+                improvements = _to_list(llm_eval.get("improvements", []))
+                recommendations = _to_list(llm_eval.get("recommendations", []))
 
                 positives_str = "\n".join(f"  ✅ {p}" for p in positives) if positives else "  None"
                 improvements_str = "\n".join(f"  ⚠️ {i}" for i in improvements) if improvements else "  None"

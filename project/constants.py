@@ -5,7 +5,7 @@ import os
 # LLM Configuration - matches other agents pattern (red-cell, aws-hero, dr-nova-science)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "meta-llama/llama-4-maverick")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "meta-llama/llama-3.3-70b-instruct")
 
 
 # Memory Configuration

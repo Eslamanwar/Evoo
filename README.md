@@ -455,7 +455,7 @@ The `EvooData` model tracks the complete state across the learning loop:
 |----------|---------|-------------|
 | `OPENAI_API_KEY` | — | API key for OpenRouter |
 | `OPENAI_BASE_URL` | `https://openrouter.ai/api/v1` | LLM API base URL |
-| `OPENAI_MODEL` | `meta-llama/llama-4-maverick` | LLM model identifier |
+| `OPENAI_MODEL` | `meta-llama/llama-3.3-70b-instruct` | LLM model identifier |
 | `EVOO_MAX_INCIDENTS` | `10` | Max incidents per learning session |
 | `EVOO_EXPLORATION_RATE` | `0.3` | Initial exploration rate (ε) |
 | `EVOO_MIN_EXPLORATION_RATE` | `0.05` | Minimum exploration rate |
@@ -470,7 +470,7 @@ Key values in [`values.yaml`](chart/evoo/values.yaml):
 env:
   OPENAI_API_KEY: <from-secret>
   OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
-  OPENAI_MODEL: "meta-llama/llama-4-maverick"
+  OPENAI_MODEL: "meta-llama/llama-3.3-70b-instruct"
   EVOO_GUARDRAILS_ENABLED: "true"
   EVOO_MAX_COST_PER_INCIDENT: "50.0"
 ```
@@ -501,7 +501,7 @@ uv venv && source .venv/bin/activate && uv sync
 # Set environment variables
 export OPENAI_API_KEY="your-openrouter-api-key"
 export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
-export OPENAI_MODEL="meta-llama/llama-4-maverick"
+export OPENAI_MODEL="meta-llama/llama-3.3-70b-instruct"
 
 # Run the agent
 agentex agents run --manifest manifest.yaml

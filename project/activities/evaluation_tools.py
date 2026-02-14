@@ -168,14 +168,14 @@ OUTCOME:
 - Recovery Time: {recovery_time_seconds:.1f} seconds
 - Numerical Reward: {numerical_reward:.2f}
 
-Please evaluate this remediation attempt. Provide:
-1. Overall assessment (excellent/good/adequate/poor/failed)
-2. What went well
-3. What could be improved
-4. Recommended strategy adjustments for future similar incidents
-5. A qualitative reward adjustment (-20 to +20) based on your expert judgment
+Please evaluate this remediation attempt. Respond in JSON with these exact keys:
+- "assessment": string — one of: excellent/good/adequate/poor/failed
+- "positives": array of strings — list of what went well (e.g. ["Fast recovery", "Correct tool selected"])
+- "improvements": array of strings — list of what could be improved (e.g. ["High latency remains", "Strategy mismatch"])
+- "recommendations": array of strings — strategy adjustments for future incidents (e.g. ["Try rollback next time"])
+- "reward_adjustment": number — qualitative adjustment -20 to +20
 
-Respond in JSON format with keys: assessment, positives, improvements, recommendations, reward_adjustment"""
+Example: {{"assessment": "good", "positives": ["Fast recovery"], "improvements": ["High error rate"], "recommendations": ["Try scale_horizontal"], "reward_adjustment": 5}}"""
 
     try:
         api_key = os.environ.get("OPENAI_API_KEY") or OPENAI_API_KEY
@@ -203,6 +203,7 @@ Respond in JSON format with keys: assessment, positives, improvements, recommend
                 {"role": "user", "content": evaluation_prompt},
             ],
             max_tokens=1000,
+            response_format={"type": "json_object"},
         )
 
         llm_response = response.choices[0].message.content

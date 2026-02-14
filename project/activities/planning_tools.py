@@ -159,6 +159,7 @@ Respond in JSON format with:
                 {"role": "user", "content": planning_prompt},
             ],
             max_tokens=500,
+            response_format={"type": "json_object"},
         )
 
         llm_response = response.choices[0].message.content

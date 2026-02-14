@@ -91,7 +91,7 @@ service:
     - name: OPENAI_BASE_URL
       value: "https://openrouter.ai/api/v1"
     - name: OPENAI_MODEL
-      value: "meta-llama/llama-4-maverick"
+      value: "meta-llama/llama-3.3-70b-instruct"
     - name: AGENTEX_BASE_URL
       valueFrom:
         secretKeyRef:
@@ -159,7 +159,7 @@ temporal-worker:
     AGENTEX_SERVER_TASK_QUEUE: agentex-server
     ENVIRONMENT: qa
     OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
-    OPENAI_MODEL: "meta-llama/llama-4-maverick"
+    OPENAI_MODEL: "meta-llama/llama-3.3-70b-instruct"
     MAX_LEARNING_RUNS: "50"
     EXPLORATION_RATE: "0.2"
     MEMORY_FILE_PATH: "/tmp/evoo_data/evoo_memory.json"
